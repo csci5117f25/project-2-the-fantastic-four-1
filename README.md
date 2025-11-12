@@ -37,6 +37,25 @@ Which (if any) progressive web app feature(s) does your app support?
 
 ![](https://media.giphy.com/media/26ufnwz3wDUli7GU0/giphy.gif)
 
+Dashboard
+
+![](https://github.com/user-attachments/assets/8e427213-e5a9-44ff-8580-a279eb6fbfe3)
+
+Single Person Detail
+
+![](https://github.com/user-attachments/assets/d87cfaa1-9641-4ac7-8deb-458e25135ca9)
+
+Login
+
+![](https://github.com/user-attachments/assets/ccd20bcf-7615-4b2a-bafc-03d356166621)
+
+Profile
+
+![](https://github.com/user-attachments/assets/bd9e58a1-492e-4854-a6d4-5b271622a550)
+
+New Person Entry
+
+![](https://github.com/user-attachments/assets/0f21dd81-623c-4a82-92e1-d4b1ebd6e21f)
 
 Figma Link to the Mockup: 
 [link](https://www.figma.com/design/ATAXkHHMz1vjkBDI3Lq5sj/Project-2-Mockups?node-id=0-1&t=HKyKuLSIR4gMfOCi-1)
@@ -56,12 +75,6 @@ Figma Link to the Mockup:
 along with a very brief caption:**
 
 ![](https://media.giphy.com/media/o0vwzuFwCGAFO/giphy.gif)
-
-![](https://github.com/user-attachments/assets/ccd20bcf-7615-4b2a-bafc-03d356166621)
-![](https://github.com/user-attachments/assets/bd9e58a1-492e-4854-a6d4-5b271622a550)
-![](https://github.com/user-attachments/assets/d87cfaa1-9641-4ac7-8deb-458e25135ca9)
-![](https://github.com/user-attachments/assets/8e427213-e5a9-44ff-8580-a279eb6fbfe3)
-![](https://github.com/user-attachments/assets/0f21dd81-623c-4a82-92e1-d4b1ebd6e21f)
 
 
 ## External Dependencies
