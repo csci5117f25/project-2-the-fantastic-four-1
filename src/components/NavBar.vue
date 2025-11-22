@@ -54,13 +54,13 @@ async function logout() {
           <button class="btn btn-outline-success" type="submit">Search</button>
         </form>
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-          <li class="nav-item" @click="router.push({ name: 'todos' })">
+          <li class="nav-item" @click="router.push({ name: 'contacts' })">
             <img class="IconImage" src="../assets/home.svg" alt="Home Icon" />
-            <span class="nav-link" aria-current="page">Todos</span>
+            <span class="nav-link" aria-current="page">Contacts</span>
           </li>
-          <li class="nav-item" @click="router.push({ name: 'done' })">
-            <img class="IconImage" src="../assets/done.svg" alt="Done Icon" />
-            <span class="nav-link">Done</span>
+          <li class="nav-item" @click="router.push({ name: 'add' })">
+            <img class="IconImage" src="../assets/add.svg" alt="Add Icon" />
+            <span class="nav-link">Add</span>
           </li>
           <li v-if="user" class="nav-item" @click="logout">
             <img class="IconImage" src="../assets/logout.svg" alt="Logout Icon" />

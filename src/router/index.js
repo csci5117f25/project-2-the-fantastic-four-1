@@ -1,9 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
-import TodosView from '../views/TodosView.vue'
-import TodoId from '../views/TodoId.vue'
+import ContactsView from '../views/ContactsView.vue'
+import ContactId from '../views/ContactId.vue'
 import NotFound from '../views/NotFound.vue'
-import DoneView from '../views/DoneView.vue'
+import AddView from '../views/AddView.vue'
 import { getCurrentUser } from 'vuefire'
 
 const router = createRouter({
@@ -15,30 +15,30 @@ const router = createRouter({
       component: HomeView,
     },
     {
-      path: '/done',
-      name: 'done',
+      path: '/add',
+      name: 'add',
       // route level code-splitting
       // this generates a separate chunk (About.[hash].js) for this route
       // which is lazy-loaded when the route is visited.
-      component: DoneView,
+      component: AddView,
       meta: { requiresAuth: true }
     },
     {
-      path: '/todos',
-      name: 'todos',
+      path: '/contacts',
+      name: 'contacts',
       // route level code-splitting
       // this generates a separate chunk (About.[hash].js) for this route
       // which is lazy-loaded when the route is visited.
-      component: TodosView,
+      component: ContactsView,
       meta: { requiresAuth: true }
     },
     {
-      path: '/todo/:id',
-      name: 'todoId',
+      path: '/contact/:id',
+      name: 'contactId',
       // route level code-splitting
       // this generates a separate chunk (About.[hash].js) for this route
       // which is lazy-loaded when the route is visited.
-      component: TodoId,
+      component: ContactId,
       meta: { requiresAuth: true }
     },
     {
