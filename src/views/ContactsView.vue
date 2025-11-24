@@ -15,6 +15,7 @@ const nextSteps = ref('')
 const router = useRouter()
 const user = useCurrentUser()
 
+
 const userContactsRef = computed(() => {
   if (!user.value) return null
   return collection(db, 'Users', user.value.uid, 'Contacts')
