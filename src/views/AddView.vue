@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCurrentUser } from 'vuefire'
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
@@ -8,9 +8,12 @@ import {db} from '../firebase_conf'
 const name = ref('')
 const company = ref('')
 const title = ref('')
-const meetingPlaceDate = ref('')
-const notes = ref('')
-const nextSteps = ref('')
+const dateMet = ref('')
+const meetingPlace = ref('')
+
+const notes = reactive([{ text: '' }])
+const nextSteps = reactive([{ text: '' }])
+
 const imageFile = ref(null)
 const voiceNote = ref(null)
 
@@ -33,26 +36,54 @@ const handleVoiceNote = () => {
   alert('Voice note feature coming soon!')
 }
 
+const addNoteField = () => notes.push({ text: '' })
+const addNextStepField = () => nextSteps.push({ text: '' })
+
 const createContact = async () => {
   if (!user.value) return router.push('/')
   
-  await addDoc(userContactsRef.value, {
+  const contactDocRef = await addDoc(userContactsRef.value, {
     name: name.value,
     company: company.value,
     title: title.value,
-    meetingPlace: meetingPlaceDate.value || '',
-    dateMet: '',
-    notes: notes.value,
-    nextSteps: nextSteps.value,
+    meetingPlace: meetingPlace.value || '',
+    dateMet: dateMet.value || '',
     createdAt: serverTimestamp()
   })
+
+  const contactId = contactDocRef.id
+
+  // Add notes
+  const notesRef = collection(db, 'Users', user.value.uid, 'Contacts', contactId, 'Notes')
+  for (const n of notes) {
+    if (n.text.trim() !== '') {
+      await addDoc(notesRef, {
+        text: n.text,
+        day: new Date().toISOString().split('T')[0],
+        createdAt: serverTimestamp()
+      })
+    }
+  }
+
+  // Add next steps
+  const stepsRef = collection(db, 'Users', user.value.uid, 'Contacts', contactId, 'NextSteps')
+  for (const s of nextSteps) {
+    if (s.text.trim() !== '') {
+      await addDoc(stepsRef, {
+        text: s.text,
+        done: false,
+        createdAt: serverTimestamp()
+      })
+    }
+  }
 
   name.value = ''
   company.value = ''
   title.value = ''
-  meetingPlaceDate.value = ''
-  notes.value = ''
-  nextSteps.value = ''
+  meetingPlace.value = ''
+  dateMet.value = ''
+  notes.splice(0, notes.length, { text: '' })
+  nextSteps.splice(0, nextSteps.length, { text: '' })
   imageFile.value = null
   voiceNote.value = null
   
@@ -82,18 +113,37 @@ const createContact = async () => {
       </div>
 
       <div class="form-field full-width">
-        <label for="meetingPlaceDate">Meeting Place/Date</label>
-        <input id="meetingPlaceDate" v-model="meetingPlaceDate" type="text" class="form-input" placeholder="e.g. Coffee shop, Nov 20, 2025" />
+        <label for="meetingPlace">Meeting Place</label>
+        <input id="meetingPlace" v-model="meetingPlace" type="text" class="form-input" placeholder="e.g. Coffee shop" />
       </div>
 
       <div class="form-field full-width">
-        <label for="notes">Notes</label>
-        <textarea id="notes" v-model="notes" class="form-textarea" placeholder="Write 3 insights..." rows="6"></textarea>
+        <label for="dateMet">Date Met</label>
+        <input
+          id="dateMet"
+          v-model="dateMet"
+          type="text"
+          class="form-input"
+          placeholder="e.g. Nov 20, 2025"
+        />
       </div>
 
+      <!-- Notes -->
       <div class="form-field full-width">
-        <label for="nextSteps">Next Steps</label>
-        <input id="nextSteps" v-model="nextSteps" type="text" class="form-input" />
+        <label>Notes</label>
+        <div v-for="(note, index) in notes" :key="index" class="dynamic-input">
+          <input v-model="note.text" type="text" class="form-input" placeholder="Enter a note..." />
+        </div>
+        <button type="button" class="add-button" @click="addNoteField">+ Add another note</button>
+      </div>
+
+      <!-- Next Steps -->
+      <div class="form-field full-width">
+        <label>Next Steps</label>
+        <div v-for="(step, index) in nextSteps" :key="index" class="dynamic-input">
+          <input v-model="step.text" type="text" class="form-input" placeholder="Enter a next step..." />
+        </div>
+        <button type="button" class="add-button" @click="addNextStepField">+ Add another next step</button>
       </div>
 
       <div class="media-options">
