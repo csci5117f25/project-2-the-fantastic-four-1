@@ -43,7 +43,7 @@ watch(user, (u) => {
 <style scoped>
 .home-page {
   min-height: calc(100vh - 60px);
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: rgb(144, 198, 252);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -52,7 +52,7 @@ watch(user, (u) => {
 
 .welcome-container {
   text-align: center;
-  color: white;
+  color: rgb(0, 0, 0);
   max-width: 900px;
 }
 
