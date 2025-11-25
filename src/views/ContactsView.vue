@@ -60,16 +60,6 @@ const contacts = useCollection(computed(() => {
             <span class="detail-label">Date Met:</span>
             <span class="detail-value">{{ c.dateMet }}</span>
           </div>
-          
-          <div v-if="c.notes" class="contact-detail-item">
-            <span class="detail-label">Notes:</span>
-            <span class="detail-value">{{ c.notes }}</span>
-          </div>
-          
-          <div v-if="c.nextSteps" class="contact-detail-item">
-            <span class="detail-label">Next Steps:</span>
-            <span class="detail-value">{{ c.nextSteps }}</span>
-          </div>
         </div>
       </div>
     </div>
