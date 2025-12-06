@@ -4,14 +4,13 @@ CSCI 5117, Fall 2025, [assignment description](https://canvas.umn.edu/courses/51
 
 ## App Info:
 
-* Team Name: TODO
-* App Name: TODO
-* App Link: <https://TODO.com/>
+* Team Name: The Fantastic Four
+* App Name: MyRolodex
+* App Link: https://project-2-8d8ee.web.app/
 
 ### Students
 
-* First Last, x500@umn.edu
-* ...
+* Cameron Nagle, Nagle118@umn.edu
 
 
 ## Key Features

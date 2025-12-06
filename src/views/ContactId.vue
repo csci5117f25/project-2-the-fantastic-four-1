@@ -1,9 +1,9 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useCurrentUser, useDocument } from 'vuefire'
+import { useCollection, useCurrentUser, useDocument } from 'vuefire'
 import { db } from '../firebase_conf'
-import { doc, updateDoc } from 'firebase/firestore'
+import { doc, collection, addDoc, query, orderBy, updateDoc } from 'firebase/firestore'
 
 const route = useRoute()
 const router = useRouter()
@@ -25,8 +25,8 @@ const edited = ref({
   title: '',
   meetingPlace: '',
   dateMet: '',
-  notes: '',
-  nextSteps: ''
+  notes: [],
+  nextSteps: []
 })
 
 const startEditing = () => {
@@ -38,18 +38,89 @@ const startEditing = () => {
     title: contact.value.title || '',
     meetingPlace: contact.value.meetingPlace || '',
     dateMet: contact.value.dateMet || '',
-    notes: contact.value.notes || '',
-    nextSteps: contact.value.nextSteps || ''
+    notes: notes.value
+    ? notes.value.map(n => ({
+        id: n.id,
+        text: n.text,
+        day: n.day,
+        createdAt: n.createdAt
+      }))
+    : [],
+
+  nextSteps: nextSteps.value
+    ? nextSteps.value.map(s => ({
+        id: s.id,
+        text: s.text,
+        done: s.done,
+        createdAt: s.createdAt
+      }))
+    : []
   }
 
   isEditing.value = true
 }
 
 const saveChanges = async () => {
-  if (!contactRef.value) return
+  // Update main contact fields
+  await updateDoc(contactRef.value, {
+    name: edited.value.name,
+    company: edited.value.company,
+    title: edited.value.title,
+    meetingPlace: edited.value.meetingPlace,
+    dateMet: edited.value.dateMet
+  })
 
-  await updateDoc(contactRef.value, edited.value)
+  // Update Notes subcollection
+  const notesRef = collection(db, 'Users', user.value.uid, 'Contacts', contactId.value, 'Notes')
+  for (const note of edited.value.notes) {
+    if (!note.id && note.text.trim() !== '') {
+      await addDoc(notesRef, {
+        text: note.text,
+        day: new Date().toISOString().split('T')[0],
+        createdAt: new Date()
+      })
+    } else if (note.id) {
+      const noteDoc = doc(db, 'Users', user.value.uid, 'Contacts', contactId.value, 'Notes', note.id)
+      await updateDoc(noteDoc, { text: note.text })
+    }
+  }
+
+  // Update NextSteps subcollection
+  const stepsRef = collection(db, 'Users', user.value.uid, 'Contacts', contactId.value, 'NextSteps')
+  for (const step of edited.value.nextSteps) {
+    if (!step.id && step.text.trim() !== '') {
+      await addDoc(stepsRef, {
+        text: step.text,
+        done: step.done || false,
+        createdAt: new Date()
+      })
+    } else if (step.id) {
+      const stepDoc = doc(db, 'Users', user.value.uid, 'Contacts', contactId.value, 'NextSteps', step.id)
+      await updateDoc(stepDoc, { text: step.text, done: step.done })
+    }
+  }
+  
   isEditing.value = false
+}
+
+// Notes
+const notesRef = computed(() => {
+  if (!user.value || !contactId.value) return null
+  return collection(db, 'Users', user.value.uid, 'Contacts', contactId.value, 'Notes')
+})
+const notes = useCollection(computed(() => notesRef.value && query(notesRef.value, orderBy('createdAt', 'desc'))))
+
+// Next Steps
+const stepsRef = computed(() => {
+  if (!user.value || !contactId.value) return null
+  return collection(db, 'Users', user.value.uid, 'Contacts', contactId.value, 'NextSteps')
+})
+const nextSteps = useCollection(computed(() => stepsRef.value && query(stepsRef.value, orderBy('createdAt', 'asc'))))
+
+// Toggle step done
+const toggleStepDone = async (step) => {
+  const stepDoc = doc(db, 'Users', user.value.uid, 'Contacts', contactId.value, 'NextSteps', step.id)
+  await updateDoc(stepDoc, { done: !step.done })
 }
 
 </script>
@@ -83,16 +154,24 @@ const saveChanges = async () => {
             <span class="detail-label">Date Met:</span>
             <span class="detail-value">{{ contact.dateMet }}</span>
           </div>
-        </div>
 
-        <div v-if="contact.notes" class="detail-section">
-          <h3 class="section-title">Notes</h3>
-          <p class="section-content">{{ contact.notes }}</p>
-        </div>
+          <!-- NEXT STEPS -->
+          <div v-if="nextSteps" class="detail-row">
+            <div v-for="step in nextSteps" :key="step.id">
+              <label>
+                <input type="checkbox" :checked="step.done" @change="toggleStepDone(step)" />
+                <span class="detail-value" >{{ step.text }}</span>
+              </label>
+            </div>
+          </div>
 
-        <div v-if="contact.nextSteps" class="detail-section">
-          <h3 class="section-title">Next Steps</h3>
-          <p class="section-content">{{ contact.nextSteps }}</p>
+          <!-- NOTES -->
+          <div v-if="notes" class="detail-row">
+            <div v-for="note in notes" :key="note.id">
+              <span class="detail-label">{{ note.day }}</span>
+              <span class="detail-value">{{ note.text }}</span>
+            </div>
+          </div>
         </div>
 
         <div class="action-buttons">
@@ -157,23 +236,23 @@ const saveChanges = async () => {
           </div>
 
           <div class="form-field full-width">
-            <label for="edit-notes">Notes</label>
-            <textarea 
-              id="edit-notes"
-              v-model="edited.notes" 
-              class="form-textarea"
-              rows="6"
-            ></textarea>
+            <label>Notes</label>
+            <div v-for="(note, i) in edited.notes" :key="note.id || i" class="dynamic-input">
+              <input v-model="note.text" type="text" class="form-input" placeholder="Enter a note..." />
+            </div>
+            <button type="button" @click="edited.notes.push({ text: '' })">+ Add Note</button>
           </div>
 
           <div class="form-field full-width">
-            <label for="edit-nextSteps">Next Steps</label>
-            <input 
-              id="edit-nextSteps"
-              v-model="edited.nextSteps" 
-              type="text" 
-              class="form-input"
-            />
+            <label>Next Steps</label>
+            <div v-for="(step, i) in edited.nextSteps" :key="step.id || i" class="dynamic-input">
+              <input v-model="step.text" type="text" class="form-input" placeholder="Enter next step..." />
+              <label>
+                <input type="checkbox" v-model="step.done" />
+                Done
+              </label>
+            </div>
+            <button type="button" @click="edited.nextSteps.push({ text: '', done: false })">+ Add Next Step</button>
           </div>
 
           <div class="form-actions">
@@ -196,7 +275,6 @@ const saveChanges = async () => {
   margin: 2rem auto;
   padding: 2rem;
   background-color: #fafafa;
-  min-height: calc(100vh - 100px);
 }
 
 .contact-detail-card {
@@ -229,9 +307,7 @@ const saveChanges = async () => {
   border: none;
   border-radius: 8px;
   font-size: 0.9rem;
-  font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s;
 }
 
 .edit-button:hover {
@@ -290,9 +366,7 @@ const saveChanges = async () => {
   border: none;
   border-radius: 8px;
   font-size: 0.9rem;
-  font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s;
 }
 
 .back-button:hover {
@@ -340,7 +414,6 @@ const saveChanges = async () => {
   border-radius: 8px;
   font-size: 1rem;
   background-color: white;
-  transition: border-color 0.2s;
 }
 
 .form-input:focus {
@@ -356,7 +429,6 @@ const saveChanges = async () => {
   font-family: inherit;
   background-color: white;
   resize: vertical;
-  transition: border-color 0.2s;
 }
 
 .form-textarea:focus {
@@ -377,9 +449,7 @@ const saveChanges = async () => {
   border: none;
   border-radius: 8px;
   font-size: 1rem;
-  font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s;
 }
 
 .save-button:hover {
@@ -393,9 +463,7 @@ const saveChanges = async () => {
   border: none;
   border-radius: 8px;
   font-size: 1rem;
-  font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s;
 }
 
 .cancel-button:hover {
