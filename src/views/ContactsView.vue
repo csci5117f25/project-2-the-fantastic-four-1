@@ -146,6 +146,7 @@ async function enableNotifications() {
     <button @click="enableNotifications">
       Enable Notifications
     </button>
+    
     <h1 class="contacts-title">Your Contacts</h1>
 
     <!-- Empty state when no contacts exist -->
