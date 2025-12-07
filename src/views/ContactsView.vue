@@ -4,6 +4,8 @@ import { useRouter } from 'vue-router'
 import { useCollection, useCurrentUser } from 'vuefire'
 import { collection, query, orderBy, updateDoc, doc, addDoc, deleteDoc } from 'firebase/firestore'
 import {db} from '../firebase_conf'
+import { getToken } from 'firebase/messaging'
+import { messaging } from '../firebase_conf'
 
 const router = useRouter()
 const user = useCurrentUser()
@@ -67,6 +69,22 @@ const progressPercentage = computed(() => {
   return Math.round((completedCount / goals.value.length) * 100)
 })
 
+async function enableNotifications() {
+  const permission = await Notification.requestPermission()
+  if (permission !== 'granted') return alert('Permission denied')
+
+  // Register the service worker explicitly from the root
+  const sw = await navigator.serviceWorker.register('/firebase-messaging-sw.js')
+
+  const token = await getToken(messaging, {
+    vapidKey: 'YOUR_PUBLIC_VAPID_KEY',
+    serviceWorkerRegistration: sw
+  })
+
+  console.log('FCM Token:', token)
+  alert('Notifications enabled!')
+}
+
 </script>
 
 <template>
@@ -126,6 +144,9 @@ const progressPercentage = computed(() => {
       </form>
     </div>
 
+    <button @click="enableNotifications">
+      Enable Notifications
+    </button>
     <h1 class="contacts-title">Your Contacts</h1>
 
     <!-- Empty state when no contacts exist -->
