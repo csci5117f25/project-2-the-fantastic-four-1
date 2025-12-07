@@ -73,11 +73,10 @@ async function enableNotifications() {
   const permission = await Notification.requestPermission()
   if (permission !== 'granted') return alert('Permission denied')
 
-  // Register the service worker explicitly from the root
   const sw = await navigator.serviceWorker.register('/firebase-messaging-sw.js')
 
   const token = await getToken(messaging, {
-    vapidKey: 'YOUR_PUBLIC_VAPID_KEY',
+    vapidKey: 'BEPxhUtOtph2fJxikmJIcOOIn6khlP4U-TdO8Tr3AB-6o_pBi55nY7EomPPX3FkSVfkl8XqXu9oSnh-dbw-vev8',
     serviceWorkerRegistration: sw
   })
 
