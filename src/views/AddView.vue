@@ -93,92 +93,96 @@ const createContact = async () => {
 </script>
 
 <template>
-  <div class="new-person-entry">
-    <h1 class="entry-title">New Person Entry</h1>
-    
-    <form @submit.prevent="createContact" class="entry-form">
-      <div class="form-row">
-        <div class="form-field">
-          <label for="name">Name</label>
-          <input id="name" v-model="name" type="text" class="form-input" required />
+  <div class="pure-g new-person-entry">
+    <div class="pure-u-1">
+      <h1 class="entry-title">New Person Entry</h1>
+      
+      <form @submit.prevent="createContact" class="pure-form pure-form-stacked entry-form">
+        <div class="pure-g form-row">
+          <div class="pure-u-1 pure-u-md-1-3">
+            <label for="name">Name</label>
+            <input id="name" v-model="name" type="text" class="pure-input-1" required />
+          </div>
+          <div class="pure-u-1 pure-u-md-1-3">
+            <label for="company">Company</label>
+            <input id="company" v-model="company" type="text" class="pure-input-1" />
+          </div>
+          <div class="pure-u-1 pure-u-md-1-3">
+            <label for="title">Title</label>
+            <input id="title" v-model="title" type="text" class="pure-input-1" />
+          </div>
         </div>
-        <div class="form-field">
-          <label for="company">Company</label>
-          <input id="company" v-model="company" type="text" class="form-input" />
-        </div>
-        <div class="form-field">
-          <label for="title">Title</label>
-          <input id="title" v-model="title" type="text" class="form-input" />
-        </div>
-      </div>
 
-      <div class="form-field full-width">
-        <label for="meetingPlace">Meeting Place</label>
-        <input id="meetingPlace" v-model="meetingPlace" type="text" class="form-input" placeholder="e.g. Coffee shop" />
-      </div>
-
-      <div class="form-field full-width">
-        <label for="dateMet">Date Met</label>
-        <input
-          id="dateMet"
-          v-model="dateMet"
-          type="text"
-          class="form-input"
-          placeholder="e.g. Nov 20, 2025"
-        />
-      </div>
-
-      <!-- Notes -->
-      <div class="form-field full-width">
-        <label>Notes</label>
-        <div v-for="(note, index) in notes" :key="index" class="dynamic-input">
-          <input v-model="note.text" type="text" class="form-input" placeholder="Enter a note..." />
+        <div class="pure-u-1">
+          <label for="meetingPlace">Meeting Place</label>
+          <input id="meetingPlace" v-model="meetingPlace" type="text" class="pure-input-1" placeholder="e.g. Coffee shop" />
         </div>
-        <button type="button" class="add-button" @click="addNoteField">+ Add another note</button>
-      </div>
 
-      <!-- Next Steps -->
-      <div class="form-field full-width">
-        <label>Next Steps</label>
-        <div v-for="(step, index) in nextSteps" :key="index" class="dynamic-input">
-          <input v-model="step.text" type="text" class="form-input" placeholder="Enter a next step..." />
+        <div class="pure-u-1">
+          <label for="dateMet">Date Met</label>
+          <input
+            id="dateMet"
+            v-model="dateMet"
+            type="text"
+            class="pure-input-1"
+            placeholder="e.g. Nov 20, 2025"
+          />
         </div>
-        <button type="button" class="add-button" @click="addNextStepField">+ Add another next step</button>
-      </div>
 
-      <div class="media-options">
-        <div class="media-option">
-          <input type="file" id="imageUpload" accept="image/*" @change="handleImageUpload" style="display: none;" />
-          <label for="imageUpload" class="upload-button image-button">
-            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="upload-icon">
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-              <path d="M3 12l3-3 3 3 6-6 6 6" stroke="#666" fill="none"></path>
-              <path d="M3 18l3-3 3 3 6-6 6 6" stroke="#666" fill="none"></path>
-              <circle cx="8.5" cy="8.5" r="1.5" fill="#999"></circle>
-            </svg>
-            <span>+ Upload Image</span>
-          </label>
+        <!-- Notes -->
+        <div class="pure-u-1">
+          <label>Notes</label>
+          <div v-for="(note, index) in notes" :key="index" class="dynamic-input">
+            <input v-model="note.text" type="text" class="pure-input-1" placeholder="Enter a note..." />
+          </div>
+          <button type="button" class="pure-button" @click="addNoteField">+ Add another note</button>
         </div>
-        
-        <span class="or-divider">or</span>
-        
-        <div class="media-option">
-          <button type="button" @click="handleVoiceNote" class="upload-button voice-button">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="voice-icon">
-              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-              <line x1="12" y1="19" x2="12" y2="23"></line>
-              <line x1="8" y1="23" x2="16" y2="23"></line>
-            </svg>
-            <span>+ Voice Note</span>
-          </button>
-        </div>
-      </div>
 
-      <div class="submit-section">
-        <button type="submit" class="submit-button">Save Contact</button>
-      </div>
-    </form>
+        <!-- Next Steps -->
+        <div class="pure-u-1">
+          <label>Next Steps</label>
+          <div v-for="(step, index) in nextSteps" :key="index" class="dynamic-input">
+            <input v-model="step.text" type="text" class="pure-input-1" placeholder="Enter a next step..." />
+          </div>
+          <button type="button" class="pure-button" @click="addNextStepField">+ Add another next step</button>
+        </div>
+
+        <div class="pure-g media-options">
+          <div class="pure-u-1 pure-u-md-1-2">
+            <input type="file" id="imageUpload" accept="image/*" @change="handleImageUpload" style="display: none;" />
+            <label for="imageUpload" class="pure-button upload-button image-button">
+              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="upload-icon">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <path d="M3 12l3-3 3 3 6-6 6 6" stroke="#666" fill="none"></path>
+                <path d="M3 18l3-3 3 3 6-6 6 6" stroke="#666" fill="none"></path>
+                <circle cx="8.5" cy="8.5" r="1.5" fill="#999"></circle>
+              </svg>
+              <span>+ Upload Image</span>
+            </label>
+          </div>
+          
+          <div class="pure-u-1 pure-u-md-1-2" style="text-align: center; line-height: 120px;">
+            <span class="or-divider">or</span>
+          </div>
+          
+          <div class="pure-u-1 pure-u-md-1-2">
+            <button type="button" @click="handleVoiceNote" class="pure-button upload-button voice-button">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="voice-icon">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                <line x1="12" y1="19" x2="12" y2="23"></line>
+                <line x1="8" y1="23" x2="16" y2="23"></line>
+              </svg>
+              <span>+ Voice Note</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="pure-u-1 submit-section">
+          <button type="submit" class="pure-button pure-button-primary submit-button">Save Contact</button>
+        </div>
+      </form>
+    </div>
   </div>
 </template>
 
@@ -198,74 +202,20 @@ const createContact = async () => {
 }
 
 .entry-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+  margin-top: 1.5rem;
 }
 
 .form-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
+  margin-bottom: 1.5rem;
 }
 
-.form-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.form-field.full-width {
-  width: 100%;
-}
-
-.form-field label {
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: #333;
-}
-
-.form-input {
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 1rem;
-  background-color: white;
-}
-
-.form-input:focus {
-  outline: none;
-  border-color: #4a90e2;
-}
-
-.form-textarea {
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-family: inherit;
-  background-color: white;
-  resize: vertical;
-}
-
-.form-textarea:focus {
-  outline: none;
-  border-color: #4a90e2;
-}
-
-.form-textarea::placeholder {
-  color: #999;
+.dynamic-input {
+  margin-bottom: 0.5rem;
 }
 
 .media-options {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-top: 0.5rem;
-}
-
-.media-option {
-  flex: 1;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
 }
 
 .upload-button {
@@ -275,22 +225,19 @@ const createContact = async () => {
   justify-content: center;
   gap: 0.5rem;
   padding: 1.5rem;
-  border-radius: 12px;
-  background-color: white;
-  cursor: pointer;
   width: 100%;
   font-size: 0.9rem;
+}
+
+.image-button {
+  background-color: white;
   color: #333;
   border: 1px solid #ddd;
 }
 
-.upload-button:hover {
-  border-color: #4a90e2;
+.image-button:hover {
+  border-color: #0078e7;
   background-color: #f0f7ff;
-}
-
-.image-button {
-  border-style: solid;
 }
 
 .voice-button {
@@ -299,8 +246,8 @@ const createContact = async () => {
   height: 120px;
   background-color: #1a1a1a;
   color: white;
-  border: none;
   padding: 0;
+  margin: 0 auto;
 }
 
 .voice-button:hover {
@@ -326,37 +273,19 @@ const createContact = async () => {
 
 .submit-section {
   margin-top: 1rem;
-  display: flex;
-  justify-content: center;
+  text-align: center;
 }
 
 .submit-button {
   padding: 0.875rem 2rem;
-  background-color: #4a90e2;
-  color: white;
-  border: none;
-  border-radius: 8px;
   font-size: 1rem;
-  cursor: pointer;
-}
-
-.submit-button:hover {
-  background-color: #357abd;
 }
 
 @media (max-width: 768px) {
-  .form-row {
-    grid-template-columns: 1fr;
-  }
-  
-  .media-options {
-    flex-direction: column;
-  }
-  
   .voice-button {
     width: 100%;
     height: auto;
-    border-radius: 12px;
+    border-radius: 0.3em;
     padding: 1.5rem;
   }
 }

@@ -1,11 +1,12 @@
 <script setup>
 import { computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useCollection, useCurrentUser } from 'vuefire'
 import { collection, query, orderBy, updateDoc, doc, addDoc, deleteDoc } from 'firebase/firestore'
 import {db} from '../firebase_conf'
 
 const router = useRouter()
+const route = useRoute()
 const user = useCurrentUser()
 
 // Contacts
@@ -18,6 +19,31 @@ const contacts = useCollection(computed(() => {
   if (!userContactsRef.value) return null
   return query(userContactsRef.value, orderBy('createdAt', 'desc'))
 }))
+
+// Get search query from route
+const searchQuery = computed(() => route.query.search || '')
+
+// Filter contacts based on search query
+const filteredContacts = computed(() => {
+  if (!contacts.value || !searchQuery.value) {
+    return contacts.value
+  }
+  
+  const query = searchQuery.value.toLowerCase().trim()
+  return contacts.value.filter(contact => {
+    const name = (contact.name || '').toLowerCase()
+    const company = (contact.company || '').toLowerCase()
+    const title = (contact.title || '').toLowerCase()
+    const meetingPlace = (contact.meetingPlace || '').toLowerCase()
+    const dateMet = (contact.dateMet || '').toLowerCase()
+    
+    return name.includes(query) || 
+           company.includes(query) || 
+           title.includes(query) || 
+           meetingPlace.includes(query) || 
+           dateMet.includes(query)
+  })
+})
 
 // Goals
 const userGoals = computed(() => {
@@ -70,103 +96,131 @@ const progressPercentage = computed(() => {
 </script>
 
 <template>
-  <div class="contacts-container">
-    <!-- Goals Section: Display and manage user's goals -->
-    <div class="goals-section">
-      <h2 class="section-title">Goals</h2>
-      
-      <!-- Show goals if any exist -->
-      <div v-if="goals && goals.length > 0">
-        <!-- List of all goals -->
-        <div class="goals-list">
-          <!-- Individual goal item with checkbox, text, and delete button -->
-          <div 
-            v-for="goal in goals" 
-            :key="goal.id" 
-            class="goal-item"
-            :class="{ 'completed': goal.completed }"
-          >
-            <!-- Checkbox to mark goal as complete/incomplete -->
+  <div class="pure-g contacts-container">
+    <div class="pure-u-1">
+      <!-- Goals Section: Display and manage user's goals -->
+      <div class="pure-g goals-section">
+        <div class="pure-u-1">
+          <h2 class="section-title">Goals</h2>
+          
+          <!-- Show goals if any exist -->
+          <div v-if="goals && goals.length > 0">
+            <!-- List of all goals -->
+            <div class="goals-list">
+              <!-- Individual goal item with checkbox, text, and delete button -->
+              <div 
+                v-for="goal in goals" 
+                :key="goal.id" 
+                class="goal-item pure-g"
+                :class="{ 'completed': goal.completed }"
+              >
+                <div class="pure-u-1-24">
+                  <input 
+                    type="checkbox" 
+                    :checked="goal.completed" 
+                    @change="toggleGoalComplete(goal)"
+                    class="goal-checkbox"
+                  />
+                </div>
+                <div class="pure-u-21-24">
+                  <span class="goal-text">{{ goal.text }}</span>
+                </div>
+                <div class="pure-u-2-24">
+                  <button @click="deleteGoal(goal.id)" class="pure-button delete-btn">
+                    <span class="delete-icon">−</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Progress bar showing completion percentage -->
+            <div class="progress-section">
+              <div class="pure-g progress-header">
+                <div class="pure-u-1-2">
+                  <span class="progress-label">Progress</span>
+                </div>
+                <div class="pure-u-1-2" style="text-align: right;">
+                  <span class="progress-percentage">{{ progressPercentage }}%</span>
+                </div>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" :style="{ width: progressPercentage + '%' }"></div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Form to add a new goal -->
+          <form @submit.prevent="addGoal" class="pure-form pure-form-inline add-goal-form">
             <input 
-              type="checkbox" 
-              :checked="goal.completed" 
-              @change="toggleGoalComplete(goal)"
-              class="goal-checkbox"
+              v-model="newGoalText"
+              type="text" 
+              placeholder="Add a new goal..."
+              class="pure-input-1 goal-input"
             />
-            <!-- Goal text -->
-            <span class="goal-text">{{ goal.text }}</span>
-            <!-- Delete button with minus icon -->
-            <button @click="deleteGoal(goal.id)" class="delete-btn">
-              <span class="delete-icon">−</span>
-            </button>
-          </div>
-        </div>
-        
-        <!-- Progress bar showing completion percentage -->
-        <div class="progress-section">
-          <div class="progress-header">
-            <span class="progress-label">Progress</span>
-            <span class="progress-percentage">{{ progressPercentage }}%</span>
-          </div>
-          <div class="progress-bar">
-            <div class="progress-fill" :style="{ width: progressPercentage + '%' }"></div>
-          </div>
+            <button type="submit" class="pure-button pure-button-primary add-btn">+</button>
+          </form>
         </div>
       </div>
-      
-      <!-- Form to add a new goal -->
-      <form @submit.prevent="addGoal" class="add-goal-form">
-        <input 
-          v-model="newGoalText"
-          type="text" 
-          placeholder="Add a new goal..."
-          class="goal-input"
-        />
-        <button type="submit" class="add-btn">+</button>
-      </form>
-    </div>
 
-    <h1 class="contacts-title">Your Contacts</h1>
+      <h1 class="contacts-title">Your Contacts</h1>
 
-    <!-- Empty state when no contacts exist -->
-    <div v-if="!contacts || contacts.length === 0" class="empty-state">
-      <p>No contacts yet. <router-link to="/add">Add your first contact</router-link></p>
-    </div>
+      <!-- Empty state when no contacts exist -->
+      <div v-if="!filteredContacts || filteredContacts.length === 0" class="empty-state">
+        <p v-if="searchQuery">No contacts found matching "{{ searchQuery }}". <router-link to="/add">Add a new contact</router-link></p>
+        <p v-else>No contacts yet. <router-link to="/add">Add your first contact</router-link></p>
+      </div>
 
-    <!-- List of contacts -->
-    <div v-else class="contacts-list">
-      <!-- Individual contact card -->
-      <div 
-        v-for="c in contacts" 
-        :key="c.id" 
-        class="contact-card"
-      >
-        <div class="contact-header">
-          <router-link :to="`/contact/${c.id}`" class="contact-name">
-            {{ c.name || 'Unnamed Contact' }}
-          </router-link>
-        </div>
-        
-        <!-- Contact details -->
-        <div class="contact-details">
-          <div v-if="c.company" class="contact-detail-item">
-            <span class="detail-label">Company:</span>
-            <span class="detail-value">{{ c.company }}</span>
+      <!-- List of contacts -->
+      <div v-else class="pure-g contacts-list">
+        <!-- Individual contact card -->
+        <div 
+          v-for="c in filteredContacts" 
+          :key="c.id" 
+          class="pure-u-1 contact-card"
+        >
+          <div class="contact-header">
+            <router-link :to="`/contact/${c.id}`" class="contact-name">
+              {{ c.name || 'Unnamed Contact' }}
+            </router-link>
           </div>
           
-          <div v-if="c.title" class="contact-detail-item">
-            <span class="detail-label">Title:</span>
-            <span class="detail-value">{{ c.title }}</span>
-          </div>
-          
-          <div v-if="c.meetingPlace" class="contact-detail-item">
-            <span class="detail-label">Meeting Place:</span>
-            <span class="detail-value">{{ c.meetingPlace }}</span>
-          </div>
-          
-          <div v-if="c.dateMet" class="contact-detail-item">
-            <span class="detail-label">Date Met:</span>
-            <span class="detail-value">{{ c.dateMet }}</span>
+          <!-- Contact details -->
+          <div class="contact-details">
+            <div v-if="c.company" class="pure-g contact-detail-item">
+              <div class="pure-u-1-4">
+                <span class="detail-label">Company:</span>
+              </div>
+              <div class="pure-u-3-4">
+                <span class="detail-value">{{ c.company }}</span>
+              </div>
+            </div>
+            
+            <div v-if="c.title" class="pure-g contact-detail-item">
+              <div class="pure-u-1-4">
+                <span class="detail-label">Title:</span>
+              </div>
+              <div class="pure-u-3-4">
+                <span class="detail-value">{{ c.title }}</span>
+              </div>
+            </div>
+            
+            <div v-if="c.meetingPlace" class="pure-g contact-detail-item">
+              <div class="pure-u-1-4">
+                <span class="detail-label">Meeting Place:</span>
+              </div>
+              <div class="pure-u-3-4">
+                <span class="detail-value">{{ c.meetingPlace }}</span>
+              </div>
+            </div>
+            
+            <div v-if="c.dateMet" class="pure-g contact-detail-item">
+              <div class="pure-u-1-4">
+                <span class="detail-label">Date Met:</span>
+              </div>
+              <div class="pure-u-3-4">
+                <span class="detail-value">{{ c.dateMet }}</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -185,10 +239,8 @@ const progressPercentage = computed(() => {
 
 .goals-section {
   background-color: #e8e8e8;
-  border-radius: 16px;
   padding: 2rem;
   margin-bottom: 3rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .section-title {
@@ -199,26 +251,15 @@ const progressPercentage = computed(() => {
 }
 
 .goals-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
   margin-bottom: 1.5rem;
 }
 
 .goal-item {
   background-color: white;
-  border-radius: 8px;
-  padding: 1rem 1.25rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  transition: all 0.2s ease;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
   border: 1px solid #d1d5db;
-  position: relative;
-}
-
-.goal-item:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  align-items: center;
 }
 
 .goal-item.completed {
@@ -233,30 +274,21 @@ const progressPercentage = computed(() => {
   width: 20px;
   height: 20px;
   cursor: pointer;
-  accent-color: #6366f1;
-  flex-shrink: 0;
 }
 
 .goal-text {
   color: #1a1a1a;
   font-size: 1rem;
-  font-weight: 400;
-  flex: 1;
+  padding: 0.5rem;
 }
 
 .delete-btn {
   background-color: #ef4444;
   color: white;
-  border: none;
   border-radius: 50%;
   width: 28px;
   height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  flex-shrink: 0;
+  padding: 0;
 }
 
 .delete-btn:hover {
@@ -269,43 +301,18 @@ const progressPercentage = computed(() => {
 }
 
 .add-goal-form {
-  display: flex;
-  gap: 0.5rem;
   margin-top: 1rem;
 }
 
 .goal-input {
-  flex: 1;
-  padding: 0.75rem 1rem;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  font-size: 1rem;
-  background-color: white;
-}
-
-.goal-input:focus {
-  outline: none;
-  border-color: #6366f1;
+  margin-right: 0.5rem;
 }
 
 .add-btn {
-  background-color: #6366f1;
-  color: white;
-  border: none;
-  border-radius: 8px;
   width: 48px;
   height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   font-size: 2rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  flex-shrink: 0;
-}
-
-.add-btn:hover {
-  background-color: #4f46e5;
+  padding: 0;
 }
 
 .progress-section {
@@ -313,8 +320,6 @@ const progressPercentage = computed(() => {
 }
 
 .progress-header {
-  display: flex;
-  justify-content: space-between;
   margin-bottom: 0.5rem;
 }
 
@@ -327,7 +332,7 @@ const progressPercentage = computed(() => {
 .progress-percentage {
   font-size: 0.9rem;
   font-weight: 600;
-  color: #6366f1;
+  color: #0078e7;
 }
 
 .progress-bar {
@@ -340,7 +345,7 @@ const progressPercentage = computed(() => {
 
 .progress-fill {
   height: 100%;
-  background-color: #6366f1;
+  background-color: #0078e7;
   border-radius: 999px;
   transition: width 0.3s ease;
 }
@@ -359,7 +364,7 @@ const progressPercentage = computed(() => {
 }
 
 .empty-state a {
-  color: #4a90e2;
+  color: #0078e7;
   text-decoration: none;
 }
 
@@ -368,21 +373,14 @@ const progressPercentage = computed(() => {
 }
 
 .contacts-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+  margin-top: 1.5rem;
 }
 
 .contact-card {
   background-color: white;
   border: 1px solid #e0e0e0;
-  border-radius: 12px;
   padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.contact-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  margin-bottom: 1.5rem;
 }
 
 .contact-header {
@@ -394,37 +392,31 @@ const progressPercentage = computed(() => {
 .contact-name {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #4a90e2;
+  color: #0078e7;
   text-decoration: none;
 }
 
 .contact-name:hover {
-  color: #357abd;
+  color: #005aad;
   text-decoration: underline;
 }
 
 .contact-details {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+  margin-top: 0.75rem;
 }
 
 .contact-detail-item {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  margin-bottom: 0.75rem;
   line-height: 1.6;
 }
 
 .detail-label {
   font-weight: 500;
   color: #333;
-  min-width: 120px;
 }
 
 .detail-value {
   color: #666;
-  flex: 1;
 }
 
 @media (max-width: 768px) {
@@ -441,20 +433,12 @@ const progressPercentage = computed(() => {
     font-size: 1.5rem;
   }
   
-  .goal-text {
-    font-size: 1rem;
-  }
-  
   .contact-card {
     padding: 1rem;
   }
   
   .contact-name {
     font-size: 1.25rem;
-  }
-  
-  .detail-label {
-    min-width: 100px;
   }
 }
 </style>
