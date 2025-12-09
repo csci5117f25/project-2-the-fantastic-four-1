@@ -126,145 +126,171 @@ const toggleStepDone = async (step) => {
 </script>
 
 <template>
-  <div class="contact-detail-container">
-    <div v-if="contact" class="contact-detail-card">
-      <div v-if="!isEditing" class="view-mode">
-        <div class="detail-header">
-          <h1 class="contact-detail-name">{{ contact.name || 'Unnamed Contact' }}</h1>
-          <button @click="startEditing" class="edit-button">Edit</button>
-        </div>
-
-        <div class="detail-section">
-          <div v-if="contact.company" class="detail-row">
-            <span class="detail-label">Company:</span>
-            <span class="detail-value">{{ contact.company }}</span>
-          </div>
-          
-          <div v-if="contact.title" class="detail-row">
-            <span class="detail-label">Title:</span>
-            <span class="detail-value">{{ contact.title }}</span>
-          </div>
-          
-          <div v-if="contact.meetingPlace" class="detail-row">
-            <span class="detail-label">Meeting Place:</span>
-            <span class="detail-value">{{ contact.meetingPlace }}</span>
-          </div>
-          
-          <div v-if="contact.dateMet" class="detail-row">
-            <span class="detail-label">Date Met:</span>
-            <span class="detail-value">{{ contact.dateMet }}</span>
-          </div>
-
-          <!-- NEXT STEPS -->
-          <div v-if="nextSteps" class="detail-row">
-            <div v-for="step in nextSteps" :key="step.id">
-              <label>
-                <input type="checkbox" :checked="step.done" @change="toggleStepDone(step)" />
-                <span class="detail-value" >{{ step.text }}</span>
-              </label>
+  <div class="pure-g contact-detail-container">
+    <div class="pure-u-1">
+      <div v-if="contact" class="contact-detail-card">
+        <div v-if="!isEditing" class="view-mode">
+          <div class="pure-g detail-header">
+            <div class="pure-u-3-4">
+              <h1 class="contact-detail-name">{{ contact.name || 'Unnamed Contact' }}</h1>
+            </div>
+            <div class="pure-u-1-4" style="text-align: right;">
+              <button @click="startEditing" class="pure-button pure-button-primary edit-button">Edit</button>
             </div>
           </div>
 
-          <!-- NOTES -->
-          <div v-if="notes" class="detail-row">
-            <div v-for="note in notes" :key="note.id">
-              <span class="detail-label">{{ note.day }}</span>
-              <span class="detail-value">{{ note.text }}</span>
+          <div class="detail-section">
+            <div v-if="contact.company" class="pure-g detail-row">
+              <div class="pure-u-1-4">
+                <span class="detail-label">Company:</span>
+              </div>
+              <div class="pure-u-3-4">
+                <span class="detail-value">{{ contact.company }}</span>
+              </div>
             </div>
+            
+            <div v-if="contact.title" class="pure-g detail-row">
+              <div class="pure-u-1-4">
+                <span class="detail-label">Title:</span>
+              </div>
+              <div class="pure-u-3-4">
+                <span class="detail-value">{{ contact.title }}</span>
+              </div>
+            </div>
+            
+            <div v-if="contact.meetingPlace" class="pure-g detail-row">
+              <div class="pure-u-1-4">
+                <span class="detail-label">Meeting Place:</span>
+              </div>
+              <div class="pure-u-3-4">
+                <span class="detail-value">{{ contact.meetingPlace }}</span>
+              </div>
+            </div>
+            
+            <div v-if="contact.dateMet" class="pure-g detail-row">
+              <div class="pure-u-1-4">
+                <span class="detail-label">Date Met:</span>
+              </div>
+              <div class="pure-u-3-4">
+                <span class="detail-value">{{ contact.dateMet }}</span>
+              </div>
+            </div>
+
+            <!-- NEXT STEPS -->
+            <div v-if="nextSteps" class="detail-row">
+              <div v-for="step in nextSteps" :key="step.id">
+                <label>
+                  <input type="checkbox" :checked="step.done" @change="toggleStepDone(step)" />
+                  <span class="detail-value">{{ step.text }}</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- NOTES -->
+            <div v-if="notes" class="detail-row">
+              <div v-for="note in notes" :key="note.id" class="pure-g">
+                <div class="pure-u-1-4">
+                  <span class="detail-label">{{ note.day }}</span>
+                </div>
+                <div class="pure-u-3-4">
+                  <span class="detail-value">{{ note.text }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="action-buttons">
+            <button @click="router.push('/contacts')" class="pure-button back-button">Back to Contacts</button>
           </div>
         </div>
 
-        <div class="action-buttons">
-          <button @click="router.push('/contacts')" class="back-button">Back to Contacts</button>
+        <div v-else class="edit-mode">
+          <h2 class="edit-title">Edit Contact</h2>
+          
+          <form @submit.prevent="saveChanges" class="pure-form pure-form-stacked edit-form">
+            <div class="pure-g form-row">
+              <div class="pure-u-1 pure-u-md-1-3">
+                <label for="edit-name">Name</label>
+                <input 
+                  id="edit-name"
+                  v-model="edited.name" 
+                  type="text" 
+                  class="pure-input-1"
+                  required
+                />
+              </div>
+              <div class="pure-u-1 pure-u-md-1-3">
+                <label for="edit-company">Company</label>
+                <input 
+                  id="edit-company"
+                  v-model="edited.company" 
+                  type="text" 
+                  class="pure-input-1"
+                />
+              </div>
+              <div class="pure-u-1 pure-u-md-1-3">
+                <label for="edit-title">Title</label>
+                <input 
+                  id="edit-title"
+                  v-model="edited.title" 
+                  type="text" 
+                  class="pure-input-1"
+                />
+              </div>
+            </div>
+
+            <div class="pure-u-1">
+              <label for="edit-meetingPlace">Meeting Place</label>
+              <input 
+                id="edit-meetingPlace"
+                v-model="edited.meetingPlace" 
+                type="text" 
+                class="pure-input-1"
+              />
+            </div>
+
+            <div class="pure-u-1">
+              <label for="edit-dateMet">Date Met</label>
+              <input 
+                id="edit-dateMet"
+                v-model="edited.dateMet" 
+                type="text" 
+                class="pure-input-1"
+                placeholder="e.g. Nov 20, 2025"
+              />
+            </div>
+
+            <div class="pure-u-1">
+              <label>Notes</label>
+              <div v-for="(note, i) in edited.notes" :key="note.id || i" class="dynamic-input">
+                <input v-model="note.text" type="text" class="pure-input-1" placeholder="Enter a note..." />
+              </div>
+              <button type="button" class="pure-button" @click="edited.notes.push({ text: '' })">+ Add Note</button>
+            </div>
+
+            <div class="pure-u-1">
+              <label>Next Steps</label>
+              <div v-for="(step, i) in edited.nextSteps" :key="step.id || i" class="dynamic-input">
+                <input v-model="step.text" type="text" class="pure-input-1" placeholder="Enter next step..." />
+                <label>
+                  <input type="checkbox" v-model="step.done" />
+                  Done
+                </label>
+              </div>
+              <button type="button" class="pure-button" @click="edited.nextSteps.push({ text: '', done: false })">+ Add Next Step</button>
+            </div>
+
+            <div class="pure-u-1 form-actions">
+              <button type="submit" class="pure-button pure-button-primary save-button">Save</button>
+              <button type="button" @click="isEditing = false" class="pure-button cancel-button">Cancel</button>
+            </div>
+          </form>
         </div>
       </div>
 
-      <div v-else class="edit-mode">
-        <h2 class="edit-title">Edit Contact</h2>
-        
-        <form @submit.prevent="saveChanges" class="edit-form">
-          <div class="form-row">
-            <div class="form-field">
-              <label for="edit-name">Name</label>
-              <input 
-                id="edit-name"
-                v-model="edited.name" 
-                type="text" 
-                class="form-input"
-                required
-              />
-            </div>
-            <div class="form-field">
-              <label for="edit-company">Company</label>
-              <input 
-                id="edit-company"
-                v-model="edited.company" 
-                type="text" 
-                class="form-input"
-              />
-            </div>
-            <div class="form-field">
-              <label for="edit-title">Title</label>
-              <input 
-                id="edit-title"
-                v-model="edited.title" 
-                type="text" 
-                class="form-input"
-              />
-            </div>
-          </div>
-
-          <div class="form-field full-width">
-            <label for="edit-meetingPlace">Meeting Place</label>
-            <input 
-              id="edit-meetingPlace"
-              v-model="edited.meetingPlace" 
-              type="text" 
-              class="form-input"
-            />
-          </div>
-
-          <div class="form-field full-width">
-            <label for="edit-dateMet">Date Met</label>
-            <input 
-              id="edit-dateMet"
-              v-model="edited.dateMet" 
-              type="text" 
-              class="form-input"
-              placeholder="e.g. Nov 20, 2025"
-            />
-          </div>
-
-          <div class="form-field full-width">
-            <label>Notes</label>
-            <div v-for="(note, i) in edited.notes" :key="note.id || i" class="dynamic-input">
-              <input v-model="note.text" type="text" class="form-input" placeholder="Enter a note..." />
-            </div>
-            <button type="button" @click="edited.notes.push({ text: '' })">+ Add Note</button>
-          </div>
-
-          <div class="form-field full-width">
-            <label>Next Steps</label>
-            <div v-for="(step, i) in edited.nextSteps" :key="step.id || i" class="dynamic-input">
-              <input v-model="step.text" type="text" class="form-input" placeholder="Enter next step..." />
-              <label>
-                <input type="checkbox" v-model="step.done" />
-                Done
-              </label>
-            </div>
-            <button type="button" @click="edited.nextSteps.push({ text: '', done: false })">+ Add Next Step</button>
-          </div>
-
-          <div class="form-actions">
-            <button type="submit" class="save-button">Save</button>
-            <button type="button" @click="isEditing = false" class="cancel-button">Cancel</button>
-          </div>
-        </form>
+      <div v-else class="loading-state">
+        <p>Loading contact...</p>
       </div>
-    </div>
-
-    <div v-else class="loading-state">
-      <p>Loading contact...</p>
     </div>
   </div>
 </template>
@@ -279,15 +305,10 @@ const toggleStepDone = async (step) => {
 
 .contact-detail-card {
   background-color: white;
-  border-radius: 12px;
   padding: 2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .detail-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   margin-bottom: 2rem;
   padding-bottom: 1rem;
   border-bottom: 2px solid #f0f0f0;
@@ -302,16 +323,7 @@ const toggleStepDone = async (step) => {
 
 .edit-button {
   padding: 0.5rem 1.5rem;
-  background-color: #4a90e2;
-  color: white;
-  border: none;
-  border-radius: 8px;
   font-size: 0.9rem;
-  cursor: pointer;
-}
-
-.edit-button:hover {
-  background-color: #357abd;
 }
 
 .detail-section {
@@ -319,8 +331,6 @@ const toggleStepDone = async (step) => {
 }
 
 .detail-row {
-  display: flex;
-  gap: 1rem;
   margin-bottom: 1rem;
   padding: 0.75rem 0;
   border-bottom: 1px solid #f5f5f5;
@@ -329,28 +339,10 @@ const toggleStepDone = async (step) => {
 .detail-label {
   font-weight: 500;
   color: #333;
-  min-width: 150px;
 }
 
 .detail-value {
   color: #666;
-  flex: 1;
-}
-
-.section-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #1a1a1a;
-  margin-bottom: 0.75rem;
-}
-
-.section-content {
-  color: #666;
-  line-height: 1.6;
-  padding: 1rem;
-  background-color: #f9f9f9;
-  border-radius: 8px;
-  margin: 0;
 }
 
 .action-buttons {
@@ -361,16 +353,7 @@ const toggleStepDone = async (step) => {
 
 .back-button {
   padding: 0.75rem 1.5rem;
-  background-color: #f0f0f0;
-  color: #333;
-  border: none;
-  border-radius: 8px;
   font-size: 0.9rem;
-  cursor: pointer;
-}
-
-.back-button:hover {
-  background-color: #e0e0e0;
 }
 
 .edit-title {
@@ -381,93 +364,30 @@ const toggleStepDone = async (step) => {
 }
 
 .edit-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+  margin-top: 1.5rem;
 }
 
 .form-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
+  margin-bottom: 1.5rem;
 }
 
-.form-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.form-field.full-width {
-  width: 100%;
-}
-
-.form-field label {
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: #333;
-}
-
-.form-input {
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 1rem;
-  background-color: white;
-}
-
-.form-input:focus {
-  outline: none;
-  border-color: #4a90e2;
-}
-
-.form-textarea {
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-family: inherit;
-  background-color: white;
-  resize: vertical;
-}
-
-.form-textarea:focus {
-  outline: none;
-  border-color: #4a90e2;
+.dynamic-input {
+  margin-bottom: 0.5rem;
 }
 
 .form-actions {
-  display: flex;
-  gap: 1rem;
   margin-top: 1rem;
 }
 
 .save-button {
   padding: 0.875rem 2rem;
-  background-color: #4a90e2;
-  color: white;
-  border: none;
-  border-radius: 8px;
   font-size: 1rem;
-  cursor: pointer;
-}
-
-.save-button:hover {
-  background-color: #357abd;
+  margin-right: 1rem;
 }
 
 .cancel-button {
   padding: 0.875rem 2rem;
-  background-color: #f0f0f0;
-  color: #333;
-  border: none;
-  border-radius: 8px;
   font-size: 1rem;
-  cursor: pointer;
-}
-
-.cancel-button:hover {
-  background-color: #e0e0e0;
 }
 
 .loading-state {
@@ -488,16 +408,6 @@ const toggleStepDone = async (step) => {
   .detail-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 1rem;
-  }
-  
-  .form-row {
-    grid-template-columns: 1fr;
-  }
-  
-  .detail-row {
-    flex-direction: column;
-    gap: 0.25rem;
   }
   
   .detail-label {
