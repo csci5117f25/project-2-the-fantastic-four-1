@@ -2,8 +2,9 @@
 import { computed, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useCollection, useCurrentUser } from 'vuefire'
-import { collection, query, orderBy, updateDoc, doc, addDoc, deleteDoc } from 'firebase/firestore'
-import {db} from '../firebase_conf'
+import { collection, query, orderBy, updateDoc, doc, addDoc, deleteDoc, getDoc } from 'firebase/firestore'
+import { db, storage } from '../firebase_conf'
+import { ref as storageRef, deleteObject } from 'firebase/storage'
 import { getToken } from 'firebase/messaging'
 import { messaging } from '../firebase_conf'
 
@@ -55,6 +56,23 @@ const deleteContact = async (contactId) => {
     contactId
   )
 
+  // Get the contact data to check if it has a photo
+  const contactSnapshot = await getDoc(contactDoc)
+  if (contactSnapshot.exists()) {
+    const contactData = contactSnapshot.data()
+    
+    // Delete photo from Storage if it exists
+    if (contactData.photoURL) {
+      try {
+        const photoRef = storageRef(storage, contactData.photoURL)
+        await deleteObject(photoRef)
+      } catch (error) {
+        console.log('Could not delete photo:', error)
+      }
+    }
+  }
+
+  // Delete the contact document
   await deleteDoc(contactDoc)
 }
 
