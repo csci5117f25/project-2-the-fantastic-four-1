@@ -194,6 +194,23 @@ const progressPercentage = computed(() => {
           :key="c.id" 
           class="pure-u-1 contact-card"
         >
+        <img
+          v-if="c.businessCardUrl"
+          :src="c.businessCardUrl"
+          alt="Business card"
+          style="
+            width: 100px;
+            height: 100px;
+            max-width: 100px;
+            max-height: 100px;
+            object-fit: cover;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            display: block;
+          "
+        />
+
+
           <div class="contact-header">
             <router-link :to="`/contact/${c.id}`" class="contact-name">
               {{ c.name || 'Unnamed Contact' }}
@@ -466,5 +483,20 @@ const progressPercentage = computed(() => {
   .contact-name {
     font-size: 1.25rem;
   }
+.contact-image {
+  display: block;
+  width: 64px !important;
+  height: 64px !important;
+  max-width: 64px !important;
+  max-height: 64px !important;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  margin-bottom: 0.75rem;
+}
+
+
+
+
 }
 </style>

@@ -2,14 +2,18 @@
 import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCurrentUser } from 'vuefire'
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
-import {db} from '../firebase_conf'
+import { collection, addDoc, serverTimestamp, doc, updateDoc } from 'firebase/firestore'
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { db, storage } from '../firebase_conf'
+
 
 const name = ref('')
 const company = ref('')
 const title = ref('')
 const dateMet = ref('')
 const meetingPlace = ref('')
+const imagePreviewUrl = ref(null)
+
 
 const notes = reactive([{ text: '' }])
 const nextSteps = reactive([{ text: '' }])
@@ -29,8 +33,10 @@ const handleImageUpload = (event) => {
   const file = event.target.files[0]
   if (file) {
     imageFile.value = file
+    imagePreviewUrl.value = URL.createObjectURL(file)
   }
 }
+
 
 const handleVoiceNote = () => {
   alert('Voice note feature coming soon!')
@@ -40,6 +46,8 @@ const addNoteField = () => notes.push({ text: '' })
 const addNextStepField = () => nextSteps.push({ text: '' })
 
 const createContact = async () => {
+  console.log('createContact called')
+  console.log('user:', user.value)
   if (!user.value) return router.push('/')
   
   const contactDocRef = await addDoc(userContactsRef.value, {
@@ -52,6 +60,31 @@ const createContact = async () => {
   })
 
   const contactId = contactDocRef.id
+
+  // Storage code stuff
+  if (imageFile.value) {
+  const file = imageFile.value
+
+const imageRef = storageRef(
+  storage,
+  `photos/${user.value.uid}/contacts/${contactId}/business-card`
+)
+
+
+  await uploadBytes(imageRef, file)
+
+  const imageUrl = await getDownloadURL(imageRef)
+
+  console.log('IMAGE URL:', imageUrl)
+
+  await updateDoc(
+    doc(db, 'Users', user.value.uid, 'Contacts', contactId),
+    {
+      businessCardUrl: imageUrl
+    }
+  )
+}
+
 
   // Add notes
   const notesRef = collection(db, 'Users', user.value.uid, 'Contacts', contactId, 'Notes')
@@ -177,6 +210,10 @@ const createContact = async () => {
             </button>
           </div>
         </div>
+        <div v-if="imagePreviewUrl" class="image-preview">
+        <img :src="imagePreviewUrl" alt="Preview" />
+        </div>
+
 
         <div class="pure-u-1 submit-section">
           <button type="submit" class="pure-button pure-button-primary submit-button">Save Contact</button>
@@ -289,4 +326,17 @@ const createContact = async () => {
     padding: 1.5rem;
   }
 }
+.image-preview {
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.image-preview img {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
 </style>
