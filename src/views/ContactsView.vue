@@ -18,7 +18,7 @@ const userContactsRef = computed(() => {
   return query(collection(db, 'Users', user.value.uid, 'Contacts'), orderBy('createdAt', 'desc'))
 })
 
-const contacts = useCollection(userContactsRef)
+const contacts = useCollection(userContactsRef, { ssrKey: 'contacts' })
 
 // Get search query from route
 const searchQuery = computed(() => route.query.search || '')
@@ -82,7 +82,7 @@ const userGoals = computed(() => {
   return query(collection(db, 'Users', user.value.uid, 'Goals'), orderBy('createdAt', 'desc'))
 })
 
-const goals = useCollection(userGoals)
+const goals = useCollection(userGoals, { ssrKey: 'goals' })
 
 const newGoalText = ref('')
 
@@ -90,7 +90,8 @@ const newGoalText = ref('')
 const addGoal = async () => {
   if (!user.value || !newGoalText.value.trim()) return
   
-  await addDoc(userGoals.value, {
+  const goalsCollection = collection(db, 'Users', user.value.uid, 'Goals')
+  await addDoc(goalsCollection, {
     text: newGoalText.value.trim(),
     completed: false,
     createdAt: new Date()

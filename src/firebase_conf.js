@@ -20,10 +20,5 @@ const firebaseConfig = {
 export const firebaseApp = initializeApp(firebaseConfig);
 export const db = getFirestore(firebaseApp)
 export const storage = getStorage(firebaseApp)
-
 export const messaging = getMessaging(firebaseApp)
-
-import { getStorage } from 'firebase/storage'
-
-export const storage = getStorage(firebaseApp)
 
