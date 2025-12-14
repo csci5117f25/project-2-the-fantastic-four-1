@@ -77,7 +77,7 @@ const saveChanges = async () => {
   // Handle photo upload if new photo was captured
   if (capturedPhoto.value) {
     try {
-      // Delete old photo if it exists
+      // Delete old photo
       if (oldPhotoURL.value) {
         const oldPhotoRef = storageRef(storage, oldPhotoURL.value)
         await deleteObject(oldPhotoRef).catch(() => {})
@@ -95,7 +95,6 @@ const saveChanges = async () => {
     }
   }
 
-  // Update main contact fields
   await updateDoc(contactRef.value, {
     name: edited.value.name,
     company: edited.value.company,
@@ -105,7 +104,6 @@ const saveChanges = async () => {
     photoURL: edited.value.photoURL
   })
 
-  // Update Notes subcollection
   const notesRef = collection(db, 'Users', user.value.uid, 'Contacts', contactId.value, 'Notes')
   for (const note of edited.value.notes) {
     if (!note.id && note.text.trim() !== '') {
@@ -120,7 +118,6 @@ const saveChanges = async () => {
     }
   }
 
-  // Update NextSteps subcollection
   const stepsRef = collection(db, 'Users', user.value.uid, 'Contacts', contactId.value, 'NextSteps')
   for (const step of edited.value.nextSteps) {
     if (!step.id && step.text.trim() !== '') {
