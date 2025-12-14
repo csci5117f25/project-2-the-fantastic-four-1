@@ -72,7 +72,6 @@ const deleteContact = async (contactId) => {
     }
   }
 
-  // Delete the contact document
   await deleteDoc(contactDoc)
 }
 

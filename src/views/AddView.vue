@@ -16,6 +16,7 @@ const notes = reactive([{ text: '' }])
 const nextSteps = reactive([{ text: '' }])
 
 const imageFile = ref(null)
+const imageFileURL = ref(null)
 const voiceNote = ref(null)
 const showCamera = ref(false)
 const capturedPhoto = ref(null)
@@ -34,6 +35,7 @@ const handleImageUpload = (event) => {
   const file = event.target.files[0]
   if (file) {
     imageFile.value = file
+    imageFileURL.value = URL.createObjectURL(file)
   }
 }
 
@@ -98,13 +100,15 @@ const addNextStepField = () => nextSteps.push({ text: '' })
 const createContact = async () => {
   if (!user.value) return router.push('/')
   
-  // Upload captured photo if exists
+  // Upload photo if exists (either captured or uploaded)
   let photoURL = null;
-  if (capturedPhoto.value) {
+  const photoToUpload = capturedPhoto.value || imageFile.value;
+  
+  if (photoToUpload) {
     try {
       const photoFileName = `photos/${user.value.uid}/${Date.now()}.jpg`;
       const photoStorageRef = storageRef(storage, photoFileName);
-      await uploadBytes(photoStorageRef, capturedPhoto.value);
+      await uploadBytes(photoStorageRef, photoToUpload);
       photoURL = await getDownloadURL(photoStorageRef);
     } catch (error) {
       console.error('Error uploading photo:', error);
@@ -156,6 +160,7 @@ const createContact = async () => {
   notes.splice(0, notes.length, { text: '' })
   nextSteps.splice(0, nextSteps.length, { text: '' })
   imageFile.value = null
+  imageFileURL.value = null
   voiceNote.value = null
   capturedPhoto.value = null
   capturedPhotoURL.value = null
@@ -272,10 +277,16 @@ const createContact = async () => {
         </div>
       </div>
 
-      <!-- Captured Photo Preview -->
+      <!-- Captured Photo -->
       <div v-if="capturedPhoto" class="photo-preview">
         <img :src="capturedPhotoURL" alt="Captured photo" class="captured-image" />
         <button type="button" @click="capturedPhoto = null; capturedPhotoURL = null" class="remove-photo">✕ Remove Photo</button>
+      </div>
+
+      <!-- Uploaded Image -->
+      <div v-if="imageFile" class="photo-preview">
+        <img :src="imageFileURL" alt="Uploaded image" class="captured-image" />
+        <button type="button" @click="imageFile = null; imageFileURL = null" class="remove-photo">✕ Remove Image</button>
       </div>
 
       <div class="submit-section">
