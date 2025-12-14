@@ -3,7 +3,8 @@ import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCurrentUser } from 'vuefire'
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
-import {db} from '../firebase_conf'
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { db, storage } from '../firebase_conf'
 
 const name = ref('')
 const company = ref('')
@@ -16,6 +17,10 @@ const nextSteps = reactive([{ text: '' }])
 
 const imageFile = ref(null)
 const voiceNote = ref(null)
+const showCamera = ref(false)
+const capturedPhoto = ref(null)
+const videoStream = ref(null)
+const capturedPhotoURL = ref(null)
 
 const router = useRouter()
 const user = useCurrentUser()
@@ -36,11 +41,76 @@ const handleVoiceNote = () => {
   alert('Voice note feature coming soon!')
 }
 
+// Camera photo capture function
+const openCamera = async () => {
+  try {
+    showCamera.value = true;
+    await new Promise(resolve => setTimeout(resolve, 0));
+    
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    videoStream.value = stream;
+    
+    const videoEl = document.getElementById('camera-preview');
+    if (videoEl) {
+      videoEl.srcObject = stream;
+      videoEl.play();
+    }
+  } catch (error) {
+    showCamera.value = false;
+    let errorMessage = 'Unable to access camera.\n\n';
+    
+    if (error.name === 'NotAllowedError') {
+      errorMessage += 'Please allow camera access in your browser settings.';
+    } else if (error.name === 'NotFoundError') {
+      errorMessage += 'No camera found.';
+    } else {
+      errorMessage += error.message;
+    }
+    alert(errorMessage);
+  }
+};
+
+const capturePhoto = () => {
+  const videoEl = document.getElementById('camera-preview');
+  const canvas = document.createElement('canvas');
+  canvas.width = videoEl.videoWidth;
+  canvas.height = videoEl.videoHeight;
+  canvas.getContext('2d').drawImage(videoEl, 0, 0);
+  
+  canvas.toBlob((blob) => {
+    capturedPhoto.value = blob;
+    capturedPhotoURL.value = URL.createObjectURL(blob);
+    closeCamera();
+  }, 'image/jpeg');
+};
+
+const closeCamera = () => {
+  if (videoStream.value) {
+    videoStream.value.getTracks().forEach(track => track.stop());
+    videoStream.value = null;
+  }
+  showCamera.value = false;
+};
+
 const addNoteField = () => notes.push({ text: '' })
 const addNextStepField = () => nextSteps.push({ text: '' })
 
 const createContact = async () => {
   if (!user.value) return router.push('/')
+  
+  // Upload captured photo if exists
+  let photoURL = null;
+  if (capturedPhoto.value) {
+    try {
+      const photoFileName = `photos/${user.value.uid}/${Date.now()}.jpg`;
+      const photoStorageRef = storageRef(storage, photoFileName);
+      await uploadBytes(photoStorageRef, capturedPhoto.value);
+      photoURL = await getDownloadURL(photoStorageRef);
+    } catch (error) {
+      console.error('Error uploading photo:', error);
+      alert('Failed to upload photo');
+    }
+  }
   
   const contactDocRef = await addDoc(userContactsRef.value, {
     name: name.value,
@@ -48,6 +118,7 @@ const createContact = async () => {
     title: title.value,
     meetingPlace: meetingPlace.value || '',
     dateMet: dateMet.value || '',
+    photoURL: photoURL || null,
     createdAt: serverTimestamp()
   })
 
@@ -86,6 +157,9 @@ const createContact = async () => {
   nextSteps.splice(0, nextSteps.length, { text: '' })
   imageFile.value = null
   voiceNote.value = null
+  capturedPhoto.value = null
+  capturedPhotoURL.value = null
+  showCamera.value = false
   
   router.push('/contacts')
 }
@@ -173,6 +247,35 @@ const createContact = async () => {
             <span>+ Voice Note</span>
           </button>
         </div>
+
+        <span class="or-divider">or</span>
+
+        <div class="media-option">
+          <button type="button" @click="openCamera" class="upload-button camera-button">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="camera-icon">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+              <circle cx="12" cy="13" r="4"></circle>
+            </svg>
+            <span>+ Take Photo</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Camera Preview Modal -->
+      <div v-if="showCamera" class="camera-modal">
+        <div class="camera-container">
+          <video id="camera-preview" class="camera-preview" autoplay playsinline></video>
+          <div class="camera-controls">
+            <button type="button" @click="capturePhoto" class="capture-button">📷 Capture</button>
+            <button type="button" @click="closeCamera" class="close-button">✕ Close</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Captured Photo Preview -->
+      <div v-if="capturedPhoto" class="photo-preview">
+        <img :src="capturedPhotoURL" alt="Captured photo" class="captured-image" />
+        <button type="button" @click="capturedPhoto = null; capturedPhotoURL = null" class="remove-photo">✕ Remove Photo</button>
       </div>
 
       <div class="submit-section">
@@ -307,6 +410,21 @@ const createContact = async () => {
   background-color: #333;
 }
 
+.camera-button {
+  border-radius: 50%;
+  width: 120px;
+  height: 120px;
+  background-color: #059669;
+  color: white;
+  border: none;
+  padding: 0;
+  transition: all 0.3s ease;
+}
+
+.camera-button:hover {
+  background-color: #047857;
+}
+
 .upload-icon {
   width: 40px;
   height: 40px;
@@ -317,6 +435,97 @@ const createContact = async () => {
   width: 32px;
   height: 32px;
   color: white;
+}
+
+.camera-icon {
+  width: 32px;
+  height: 32px;
+  color: white;
+}
+
+.camera-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.camera-container {
+  max-width: 640px;
+  width: 90%;
+}
+
+.camera-preview {
+  width: 100%;
+  border-radius: 12px;
+  background-color: #000;
+}
+
+.camera-controls {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+  justify-content: center;
+}
+
+.capture-button {
+  padding: 1rem 2rem;
+  background-color: #059669;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.capture-button:hover {
+  background-color: #047857;
+}
+
+.close-button {
+  padding: 1rem 2rem;
+  background-color: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.close-button:hover {
+  background-color: #b91c1c;
+}
+
+.photo-preview {
+  margin-top: 1rem;
+  position: relative;
+}
+
+.captured-image {
+  width: 100%;
+  max-width: 400px;
+  border-radius: 12px;
+  display: block;
+}
+
+.remove-photo {
+  margin-top: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.remove-photo:hover {
+  background-color: #b91c1c;
 }
 
 .or-divider {
@@ -354,6 +563,13 @@ const createContact = async () => {
   }
   
   .voice-button {
+    width: 100%;
+    height: auto;
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+
+  .camera-button {
     width: 100%;
     height: auto;
     border-radius: 12px;

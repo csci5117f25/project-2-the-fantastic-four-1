@@ -13,24 +13,18 @@ const user = useCurrentUser()
 // Contacts
 const userContactsRef = computed(() => {
   if (!user.value) return null
-  return collection(db, 'Users', user.value.uid, 'Contacts')
+  return query(collection(db, 'Users', user.value.uid, 'Contacts'), orderBy('createdAt', 'desc'))
 })
 
-const contacts = useCollection(computed(() => {
-  if (!userContactsRef.value) return null
-  return query(userContactsRef.value, orderBy('createdAt', 'desc'))
-}))
+const contacts = useCollection(userContactsRef)
 
 // Goals
 const userGoals = computed(() => {
   if (!user.value) return null
-  return collection(db, 'Users', user.value.uid, 'Goals')
+  return query(collection(db, 'Users', user.value.uid, 'Goals'), orderBy('createdAt', 'desc'))
 })
 
-const goals = useCollection(computed(() => {
-  if (!userGoals.value) return null
-  return query(userGoals.value, orderBy('createdAt', 'desc'))
-}))
+const goals = useCollection(userGoals)
 
 const newGoalText = ref('')
 
