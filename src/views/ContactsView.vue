@@ -47,6 +47,20 @@ const filteredContacts = computed(() => {
   })
 })
 
+const deleteContact = async (contactId) => {
+  if (!user.value) return
+
+  const contactDoc = doc(
+    db,
+    'Users',
+    user.value.uid,
+    'Contacts',
+    contactId
+  )
+
+  await deleteDoc(contactDoc)
+}
+
 // Goals
 const userGoals = computed(() => {
   if (!user.value) return null
@@ -95,21 +109,6 @@ const progressPercentage = computed(() => {
   return Math.round((completedCount / goals.value.length) * 100)
 })
 
-async function enableNotifications() {
-  const permission = await Notification.requestPermission()
-  if (permission !== 'granted') return alert('Permission denied')
-
-  const sw = await navigator.serviceWorker.register('/firebase-messaging-sw.js')
-
-  const token = await getToken(messaging, {
-    vapidKey: 'BEPxhUtOtph2fJxikmJIcOOIn6khlP4U-TdO8Tr3AB-6o_pBi55nY7EomPPX3FkSVfkl8XqXu9oSnh-dbw-vev8',
-    serviceWorkerRegistration: sw
-  })
-
-  console.log('FCM Token:', token)
-  alert('Notifications enabled!')
-}
-
 </script>
 
 <template>
@@ -144,7 +143,7 @@ async function enableNotifications() {
                 </div>
                 <div class="pure-u-2-24">
                   <button @click="deleteGoal(goal.id)" class="pure-button delete-btn">
-                    <span class="delete-icon">−</span>
+                    <span class="delete-icon">-</span>
                   </button>
                 </div>
               </div>
@@ -179,9 +178,6 @@ async function enableNotifications() {
         </div>
       </div>
 
-    <button @click="enableNotifications">
-      Enable Notifications
-    </button>
     <h1 class="contacts-title">Your Contacts</h1>
 
       <!-- Empty state when no contacts exist -->
@@ -202,6 +198,13 @@ async function enableNotifications() {
             <router-link :to="`/contact/${c.id}`" class="contact-name">
               {{ c.name || 'Unnamed Contact' }}
             </router-link>
+
+            <button
+              class="pure-button delete-btn"
+              @click="deleteContact(c.id)"
+            >
+              -
+            </button>
           </div>
           
           <!-- Contact details -->
@@ -404,6 +407,9 @@ async function enableNotifications() {
 }
 
 .contact-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 1rem;
   padding-bottom: 0.75rem;
   border-bottom: 1px solid #f0f0f0;
