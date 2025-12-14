@@ -12,6 +12,8 @@ const company = ref('')
 const title = ref('')
 const dateMet = ref('')
 const meetingPlace = ref('')
+const imagePreviewUrl = ref(null)
+
 
 const notes = reactive([{ text: '' }])
 const nextSteps = reactive([{ text: '' }])
@@ -31,8 +33,10 @@ const handleImageUpload = (event) => {
   const file = event.target.files[0]
   if (file) {
     imageFile.value = file
+    imagePreviewUrl.value = URL.createObjectURL(file)
   }
 }
+
 
 const handleVoiceNote = () => {
   alert('Voice note feature coming soon!')
@@ -206,6 +210,10 @@ const imageRef = storageRef(
             </button>
           </div>
         </div>
+        <div v-if="imagePreviewUrl" class="image-preview">
+        <img :src="imagePreviewUrl" alt="Preview" />
+        </div>
+
 
         <div class="pure-u-1 submit-section">
           <button type="submit" class="pure-button pure-button-primary submit-button">Save Contact</button>
@@ -318,4 +326,17 @@ const imageRef = storageRef(
     padding: 1.5rem;
   }
 }
+.image-preview {
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.image-preview img {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
 </style>
