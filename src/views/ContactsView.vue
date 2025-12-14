@@ -2,8 +2,9 @@
 import { computed, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useCollection, useCurrentUser } from 'vuefire'
-import { collection, query, orderBy, updateDoc, doc, addDoc, deleteDoc } from 'firebase/firestore'
-import {db} from '../firebase_conf'
+import { collection, query, orderBy, updateDoc, doc, addDoc, deleteDoc, getDoc } from 'firebase/firestore'
+import { db, storage } from '../firebase_conf'
+import { ref as storageRef, deleteObject } from 'firebase/storage'
 import { getToken } from 'firebase/messaging'
 import { messaging } from '../firebase_conf'
 
@@ -14,13 +15,10 @@ const user = useCurrentUser()
 // Contacts
 const userContactsRef = computed(() => {
   if (!user.value) return null
-  return collection(db, 'Users', user.value.uid, 'Contacts')
+  return query(collection(db, 'Users', user.value.uid, 'Contacts'), orderBy('createdAt', 'desc'))
 })
 
-const contacts = useCollection(computed(() => {
-  if (!userContactsRef.value) return null
-  return query(userContactsRef.value, orderBy('createdAt', 'desc'))
-}))
+const contacts = useCollection(userContactsRef, { ssrKey: 'contacts' })
 
 // Get search query from route
 const searchQuery = computed(() => route.query.search || '')
@@ -58,19 +56,33 @@ const deleteContact = async (contactId) => {
     contactId
   )
 
+  // Get the contact data to check if it has a photo
+  const contactSnapshot = await getDoc(contactDoc)
+  if (contactSnapshot.exists()) {
+    const contactData = contactSnapshot.data()
+    
+    // Delete photo from Storage if it exists
+    if (contactData.photoURL) {
+      try {
+        const photoRef = storageRef(storage, contactData.photoURL)
+        await deleteObject(photoRef)
+      } catch (error) {
+        console.log('Could not delete photo:', error)
+      }
+    }
+  }
+
+  // Delete the contact document
   await deleteDoc(contactDoc)
 }
 
 // Goals
 const userGoals = computed(() => {
   if (!user.value) return null
-  return collection(db, 'Users', user.value.uid, 'Goals')
+  return query(collection(db, 'Users', user.value.uid, 'Goals'), orderBy('createdAt', 'desc'))
 })
 
-const goals = useCollection(computed(() => {
-  if (!userGoals.value) return null
-  return query(userGoals.value, orderBy('createdAt', 'desc'))
-}))
+const goals = useCollection(userGoals, { ssrKey: 'goals' })
 
 const newGoalText = ref('')
 
@@ -78,7 +90,8 @@ const newGoalText = ref('')
 const addGoal = async () => {
   if (!user.value || !newGoalText.value.trim()) return
   
-  await addDoc(userGoals.value, {
+  const goalsCollection = collection(db, 'Users', user.value.uid, 'Goals')
+  await addDoc(goalsCollection, {
     text: newGoalText.value.trim(),
     completed: false,
     createdAt: new Date()
