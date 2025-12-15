@@ -144,7 +144,9 @@ const openCamera = async () => {
     showCamera.value = true;
     await new Promise(resolve => setTimeout(resolve, 0));
     
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    const stream = await navigator.mediaDevices.getUserMedia({ 
+      video: { facingMode: 'environment' } 
+    });
     videoStream.value = stream;
     
     const videoEl = document.getElementById('camera-preview-edit');
