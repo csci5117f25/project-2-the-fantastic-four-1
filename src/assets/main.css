@@ -1,0 +1,79 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+.p-datepicker {
+  background: white !important;
+  border-radius: 12px;
+  padding: 0.75rem;
+}
+
+.p-datepicker table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.p-datepicker td span {
+  border-radius: 6px;
+}
+
+.p-datepicker td span:hover {
+  background: #e5e7eb;
+}
+
+.p-inputtext {
+  padding: 0.75rem;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.p-datepicker,
+.p-datepicker-panel,
+.p-component {
+  background-color: #dbdbdb !important;
+}
+.p-component {
+  display: block;
+}
+
+.p-datepicker table,
+.p-datepicker-header {
+  background-color: #ffffff !important;
+}
+
+.p-datepicker-year {
+  margin-left: 0.25rem;
+}
+
+.p-inputtext,
+.p-datepicker,
+.p-dropdown,
+.p-calendar {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.p-datepicker-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+
+@media (max-width: 768px) {
+  .form-row,
+  .media-options {
+    flex-direction: column;
+  }
+
+  button,
+  input {
+    width: 100%;
+  }
+}
+
+
+
