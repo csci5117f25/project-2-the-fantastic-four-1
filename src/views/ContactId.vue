@@ -252,23 +252,50 @@ const toggleStepDone = async (step) => {
           </div>
 
           <!-- NEXT STEPS -->
-          <div v-if="nextSteps" class="detail-row">
-            <div v-for="step in nextSteps" :key="step.id">
-              <label>
-                <input type="checkbox" :checked="step.done" @change="toggleStepDone(step)" />
-                <span class="detail-value" >{{ step.text }}</span>
-              </label>
-            </div>
-          </div>
+<div class="detail-row">
+  <div class="detail-label">Next Steps</div>
 
-          <!-- NOTES -->
-          <div v-if="notes" class="detail-row">
-            <div v-for="note in notes" :key="note.id">
-              <span class="detail-label">{{ note.day }}</span>
-              <span class="detail-value">{{ note.text }}</span>
-            </div>
-          </div>
+  <div class="detail-value">
+    <div class="goals-list">
+      <div
+        v-for="step in nextSteps"
+        :key="step.id"
+        class="goal-item"
+        :class="{ completed: step.done }"
+      >
+        <input
+          type="checkbox"
+          :checked="step.done"
+          @change="toggleStepDone(step)"
+          class="goal-checkbox"
+        />
+
+        <span class="goal-text">{{ step.text }}</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+        <!-- NOTES -->
+<div v-if="notes" class="detail-row">
+  <span class="detail-label">Notes</span>
+  <div class="detail-value">
+    <ul class="detail-list">
+      <li v-for="note in notes" :key="note.id" class="note-item">
+        {{ note.text }}
+      </li>
+    </ul>
+  </div>
+</div>
+
+
+
         </div>
+
+
 
         <div class="action-buttons">
           <button @click="router.push('/contacts')" class="back-button">Back to Contacts</button>
@@ -401,6 +428,12 @@ const toggleStepDone = async (step) => {
 </template>
 
 <style scoped>
+.detail-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 .contact-detail-container {
   max-width: 900px;
   margin: 2rem auto;
@@ -456,6 +489,28 @@ const toggleStepDone = async (step) => {
   padding: 0.75rem 0;
   border-bottom: 1px solid #f5f5f5;
 }
+
+.detail-row {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  align-items: start;
+}
+
+.detail-value {
+  display: block;
+}
+
+.detail-list {
+  margin: 0;
+  padding-left: 1rem;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 
 .detail-label {
   font-weight: 500;
@@ -522,6 +577,69 @@ const toggleStepDone = async (step) => {
   grid-template-columns: repeat(3, 1fr);
   gap: 1rem;
 }
+
+.detail-list {
+  padding-left: 0.5rem;
+  margin: 0;
+}
+.detail-row {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  align-items: start;
+}
+
+.detail-value {
+  display: block;
+}
+
+.detail-list {
+  margin: 0;
+  padding-left: 1rem;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Reuse Goals Todo UI for Next Steps */
+
+.goals-list {
+  margin: 0;
+}
+
+.goal-item {
+  background-color: white;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.goal-item.completed {
+  opacity: 0.6;
+}
+
+.goal-item.completed .goal-text {
+  text-decoration: line-through;
+}
+
+.goal-checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.goal-text {
+  font-size: 0.95rem;
+  color: #1a1a1a;
+}
+
+
+
 
 .form-field {
   display: flex;
@@ -769,5 +887,11 @@ const toggleStepDone = async (step) => {
   .detail-label {
     min-width: auto;
   }
+  .note-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
 }
 </style>

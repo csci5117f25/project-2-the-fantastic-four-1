@@ -16,32 +16,25 @@ const inputValue = ref('')
 const router = useRouter()
 const route = useRoute()
 
-// Initialize input value from route query if exists
 if (route.query.search) {
   inputValue.value = route.query.search
 }
 
-// Watch for route changes to sync input value
 watch(() => route.query.search, (newSearch) => {
   if (newSearch !== inputValue.value) {
     inputValue.value = newSearch || ''
   }
 })
 
-// Debounce timer
 let searchTimeout = null
 
-// Watch input value and update route query in real-time
 watch(inputValue, (newValue) => {
-  // Clear previous timeout
   if (searchTimeout) {
     clearTimeout(searchTimeout)
   }
   
-  // Only navigate if we're on contacts page or going to contacts
   const isOnContactsPage = route.name === 'contacts'
   
-  // Debounce the search update (wait 300ms after user stops typing)
   searchTimeout = setTimeout(() => {
     if (isOnContactsPage) {
       if (newValue.trim()) {
@@ -50,7 +43,6 @@ watch(inputValue, (newValue) => {
           query: { search: newValue.trim() }
         })
       } else {
-        // Clear search if input is empty
         router.push({
           name: 'contacts',
           query: {}
@@ -62,7 +54,7 @@ watch(inputValue, (newValue) => {
 
 async function login() {
   try {
-      const result = await signInWithPopup(auth, provider)
+      await signInWithPopup(auth, provider)
   } catch {
       alert("oh no");
   }
@@ -70,14 +62,13 @@ async function login() {
 
 async function logout() {
   try {
-    const result = await signOut(auth)
+    await signOut(auth)
     router.push('/')
   } catch {
     alert("oh no");
   }
 }
 
-// Search handler for form submission (navigates to contacts if not already there)
 function handleSearch(e) {
   e.preventDefault()
   if (inputValue.value.trim()) {
@@ -92,14 +83,13 @@ function handleSearch(e) {
     })
   }
 }
-
 </script>
 
 <template>
   <div class="pure-menu pure-menu-horizontal custom-navbar">
     <div class="pure-menu-heading">Contacts App</div>
     <ul class="pure-menu-list">
-      <li class="pure-menu-item">
+      <li class="pure-menu-item search-item">
         <form class="pure-form pure-form-inline" role="search" @submit.prevent="handleSearch">
           <input 
             v-model="inputValue" 
@@ -107,7 +97,6 @@ function handleSearch(e) {
             type="search" 
             placeholder="Search" 
             aria-label="Search"
-            @input="handleSearch"
           />
           <button class="pure-button pure-button-primary" type="submit">Search</button>
         </form>
@@ -161,6 +150,17 @@ function handleSearch(e) {
   font-weight: bold;
 }
 
+.pure-menu-list {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.search-item {
+  flex: 1 1 250px;
+}
+
 .nav-link-item {
   display: flex;
   flex-direction: column;
@@ -170,33 +170,41 @@ function handleSearch(e) {
 }
 
 .nav-link-item .IconImage {
-  height: 30px;
-  width: 30px;
+  height: 28px;
+  width: 28px;
 }
 
 .pure-form-inline {
   display: flex;
   gap: 0.5rem;
   align-items: center;
+  width: 100%;
 }
 
 .pure-input-rounded {
   padding: 0.5em 1em;
   border-radius: 2em;
+  width: 100%;
 }
 
 @media (max-width: 768px) {
-  .custom-navbar {
-    padding: 0.5rem;
+  .pure-menu-list {
+    flex-direction: column;
+    align-items: stretch;
   }
-  
+
+  .pure-menu-item {
+    width: 100%;
+    text-align: center;
+  }
+
+  .nav-link-item {
+    flex-direction: row;
+    justify-content: center;
+  }
+
   .pure-form-inline {
     flex-direction: column;
-    width: 100%;
-  }
-  
-  .pure-input-rounded {
-    width: 100%;
   }
 }
 </style>

@@ -5,11 +5,13 @@ import { useCurrentUser } from 'vuefire'
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { db, storage } from '../firebase_conf'
+import DatePicker from 'primevue/datepicker'
+
 
 const name = ref('')
 const company = ref('')
 const title = ref('')
-const dateMet = ref('')
+const dateMet = ref(null)
 const meetingPlace = ref('')
 
 const notes = reactive([{ text: '' }])
@@ -123,7 +125,13 @@ const createContact = async () => {
     company: company.value,
     title: title.value,
     meetingPlace: meetingPlace.value || '',
-    dateMet: dateMet.value || '',
+    dateMet: dateMet.value
+  ? dateMet.value.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    })
+  : '',
     photoURL: photoURL || null,
     createdAt: serverTimestamp()
   })
@@ -199,15 +207,18 @@ const createContact = async () => {
       </div>
 
       <div class="form-field full-width">
-        <label for="dateMet">Date Met</label>
-        <input
-          id="dateMet"
+        <label>Date Met</label>
+        <DatePicker
+          small
           v-model="dateMet"
-          type="text"
-          class="form-input"
-          placeholder="e.g. Nov 20, 2025"
+          appendTo="body"
+          dateFormat="M d, yy"
+          showIcon
+          placeholder="Select date"
+          inputClass="form-input"
         />
       </div>
+
 
       <!-- Notes -->
       <div class="form-field full-width">
@@ -349,6 +360,16 @@ const createContact = async () => {
   background-color: white;
 }
 
+:deep(.p-datepicker-title) {
+  display: flex;
+  align-items: center;
+}
+
+:deep(.p-datepicker-title .p-datepicker-month) {
+  margin-right: 0.35rem;
+}
+
+
 .form-input:focus {
   outline: none;
   border-color: #4a90e2;
@@ -443,6 +464,10 @@ const createContact = async () => {
   height: 40px;
   color: #666;
 }
+.p-datepicker {
+  max-width: 320px;
+}
+
 
 .voice-icon {
   width: 32px;
@@ -455,6 +480,13 @@ const createContact = async () => {
   height: 32px;
   color: white;
 }
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 1rem;
+}
+
 
 .camera-modal {
   position: fixed;
@@ -588,5 +620,12 @@ const createContact = async () => {
     border-radius: 12px;
     padding: 1.5rem;
   }
+  :deep(.p-inputtext) {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
 }
 </style>
