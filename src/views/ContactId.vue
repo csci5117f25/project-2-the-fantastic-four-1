@@ -247,7 +247,8 @@ const toggleStepDone = async (step) => {
           <div v-if="contact.photoURL" class="detail-row photo-section">
             <span class="detail-label">Photo:</span>
             <div class="photo-container">
-              <img :src="contact.photoURL" alt="Contact photo" class="contact-photo" />
+              <img :src="contact.photoURL" alt="Contact photo" style="width: 150px; height: 150px; object-fit: cover; border-radius: 8px;" />
+
             </div>
           </div>
 
