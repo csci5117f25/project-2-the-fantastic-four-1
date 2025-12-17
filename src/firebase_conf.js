@@ -17,8 +17,18 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-export const firebaseApp = initializeApp(firebaseConfig);
+export const firebaseApp = initializeApp(firebaseConfig)
 export const db = getFirestore(firebaseApp)
 export const storage = getStorage(firebaseApp)
-export const messaging = getMessaging(firebaseApp)
+
+// Initialize messaging only if supported
+let messaging = null
+try {
+  if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+    messaging = getMessaging(firebaseApp)
+  }
+} catch (error) {
+  console.log('Firebase Messaging not supported in this browser')
+}
+export { messaging }
 

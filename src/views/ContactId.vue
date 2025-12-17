@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCollection, useCurrentUser, useDocument } from 'vuefire'
 import { db, storage } from '../firebase_conf'
@@ -18,6 +18,13 @@ const contactRef = computed(() => {
 })
 
 const contact = useDocument(contactRef)
+
+//handle redirect if contact does not exist
+watch(contact, (newContact) => {
+  if (newContact === null && user.value && contactId.value) {
+    router.push('/404')
+  }
+}, { immediate: true })
 
 const isEditing = ref(false)
 const edited = ref({

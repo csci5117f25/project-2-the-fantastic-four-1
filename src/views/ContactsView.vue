@@ -72,6 +72,7 @@ const deleteContact = async (contactId) => {
     }
   }
 
+  // Delete the contact document
   await deleteDoc(contactDoc)
 }
 
@@ -207,10 +208,9 @@ const progressPercentage = computed(() => {
           class="pure-u-1 contact-card"
         >
         <img
-  v-if="c.photoURL"
-  :src="c.photoURL"
-  alt="Business card"
-  class="contact-image"
+          v-if="c.businessCardUrl"
+          :src="c.businessCardUrl"
+          alt="Business card"
           style="
             width: 100px;
             height: 100px;
