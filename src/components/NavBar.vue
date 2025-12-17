@@ -87,7 +87,7 @@ function handleSearch(e) {
 
 <template>
   <div class="pure-menu pure-menu-horizontal custom-navbar">
-    <div class="pure-menu-heading">Contacts App</div>
+    <div class="pure-menu-heading">ContactPro</div>
     <ul class="pure-menu-list">
       <li class="pure-menu-item search-item">
         <form class="pure-form pure-form-inline" role="search" @submit.prevent="handleSearch">
