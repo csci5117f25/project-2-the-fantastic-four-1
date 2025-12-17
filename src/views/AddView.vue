@@ -362,7 +362,6 @@ const createContact = async () => {
   max-width: 900px;
   margin: 2rem auto;
   padding: 2rem;
-  background-color: #fafafa;
 }
 
 .entry-title {
