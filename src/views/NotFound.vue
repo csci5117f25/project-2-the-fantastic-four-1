@@ -2,7 +2,7 @@
   <main>
     <div>
       <h2>404 - Page not found</h2>
-      <RouterLink to="/todos">Back to todos!</RouterLink>
+      <RouterLink to="/contacts">Back to contacts!</RouterLink>
     </div>
   </main>
 </template>
