@@ -286,21 +286,23 @@ const progressPercentage = computed(() => {
   max-width: 1000px;
   margin: 2rem auto;
   padding: 2rem;
-  background-color: #fafafa;
   min-height: calc(100vh - 100px);
 }
 
 .goals-section {
-  background-color: #e8e8e8;
-  padding: 2rem;
+  background: linear-gradient(135deg, #9D50BB 0%, #6E48AA 100%);
+  padding: 2.5rem;
   margin-bottom: 3rem;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(157, 80, 187, 0.3);
 }
 
 .section-title {
-  font-size: 1.75rem;
+  font-size: 2rem;
   font-weight: bold;
-  color: #1a1a1a;
+  color: #ffffff;
   margin: 0 0 1.5rem 0;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .goals-list {
@@ -309,10 +311,18 @@ const progressPercentage = computed(() => {
 
 .goal-item {
   background-color: white;
-  padding: 1rem;
+  padding: 1.25rem;
   margin-bottom: 0.75rem;
-  border: 1px solid #d1d5db;
+  border: none;
+  border-radius: 12px;
   align-items: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.goal-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .goal-item.completed {
@@ -379,35 +389,37 @@ const progressPercentage = computed(() => {
 .progress-label {
   font-size: 0.9rem;
   font-weight: 600;
-  color: #1a1a1a;
+  color: #ffffff;
 }
 
 .progress-percentage {
   font-size: 0.9rem;
   font-weight: 600;
-  color: #0078e7;
+  color: #FFE66D;
 }
 
 .progress-bar {
   width: 100%;
-  height: 8px;
-  background-color: #d1d5db;
+  height: 10px;
+  background-color: rgba(255, 255, 255, 0.3);
   border-radius: 999px;
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
-  background-color: #0078e7;
+  background: linear-gradient(90deg, #FFE66D 0%, #FFAA00 100%);
   border-radius: 999px;
   transition: width 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .contacts-title {
-  font-size: 2rem;
+  font-size: 2.25rem;
   font-weight: bold;
-  color: #1a1a1a;
+  color: #ffffff;
   margin-bottom: 2rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .empty-state {
@@ -430,10 +442,18 @@ const progressPercentage = computed(() => {
 }
 
 .contact-card {
-  background-color: white;
-  border: 1px solid #e0e0e0;
-  padding: 1.5rem;
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border: none;
+  border-radius: 16px;
+  padding: 1.75rem;
   margin-bottom: 1.5rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.contact-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
 
 .contact-header {
@@ -447,14 +467,18 @@ const progressPercentage = computed(() => {
 
 .contact-name {
   font-size: 1.5rem;
-  font-weight: 600;
-  color: #0078e7;
+  font-weight: 700;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   text-decoration: none;
+  transition: all 0.3s ease;
 }
 
 .contact-name:hover {
-  color: #005aad;
-  text-decoration: underline;
+  transform: scale(1.02);
+  filter: brightness(1.2);
 }
 
 .contact-details {

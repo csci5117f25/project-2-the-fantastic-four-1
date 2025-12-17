@@ -18,7 +18,6 @@ async function login() {
   try {
     await signInWithPopup(auth, provider)
   } catch (error) {
-    console.error('Login error:', error)
     alert('Login failed. Please try again.')
   }
 }

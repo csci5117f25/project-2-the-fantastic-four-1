@@ -56,7 +56,7 @@ async function login() {
   try {
       await signInWithPopup(auth, provider)
   } catch {
-      alert("oh no");
+      alert("Login failed. Please try again.");
   }
 }
 
