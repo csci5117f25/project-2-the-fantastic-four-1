@@ -207,9 +207,10 @@ const progressPercentage = computed(() => {
           class="pure-u-1 contact-card"
         >
         <img
-          v-if="c.businessCardUrl"
-          :src="c.businessCardUrl"
-          alt="Business card"
+  v-if="c.photoURL"
+  :src="c.photoURL"
+  alt="Business card"
+  class="contact-image"
           style="
             width: 100px;
             height: 100px;

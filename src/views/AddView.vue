@@ -6,7 +6,14 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { db, storage } from '../firebase_conf'
 import DatePicker from 'primevue/datepicker'
+import Button from 'primevue/button'
 
+const isRecording = ref(false)
+const recognitionInstance = ref(null)
+const recordingTimeout = ref(null)
+
+let mediaRecorder = null
+let audioChunks = []
 
 const name = ref('')
 const company = ref('')
@@ -41,127 +48,155 @@ const handleImageUpload = (event) => {
   }
 }
 
-const handleVoiceNote = () => {
-  alert('Voice note feature coming soon!')
+const toggleVoiceRecording = () => {
+  if (isRecording.value) stopVoiceRecording()
+  else startVoiceRecording()
 }
 
-// Camera photo capture function
+const startVoiceRecording = () => {
+  if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
+    alert("Speech recognition not supported. Use Chrome.")
+    return
+  }
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+  const recognition = new SpeechRecognition()
+  recognitionInstance.value = recognition
+
+  recognition.lang = "en-US"
+  recognition.interimResults = true
+  recognition.continuous = true
+
+  isRecording.value = true
+
+  let finalTranscript = ""
+  let liveNoteIndex = notes.length
+  notes.push({ text: "" })
+
+  recognition.onresult = (event) => {
+    let interimTranscript = ""
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const transcript = event.results[i][0].transcript
+      if (event.results[i].isFinal) finalTranscript += transcript + " "
+      else interimTranscript += transcript + " "
+    }
+    notes[liveNoteIndex].text = finalTranscript + interimTranscript
+  }
+
+  recognition.onerror = (event) => {
+    console.error("Speech recognition error:", event.error)
+    if (event.error !== "no-speech") {
+      stopVoiceRecording()
+      alert("Speech recognition failed: " + event.error)
+    }
+  }
+
+  recognition.onend = () => {
+    if (finalTranscript.trim() !== "") notes[liveNoteIndex].text = finalTranscript.trim()
+    else notes.splice(liveNoteIndex, 1)
+    isRecording.value = false
+    recognitionInstance.value = null
+    clearTimeout(recordingTimeout.value)
+  }
+
+  recognition.start()
+  recordingTimeout.value = setTimeout(stopVoiceRecording, 30_000)
+}
+
+const stopVoiceRecording = () => {
+  if (recognitionInstance.value) {
+    recognitionInstance.value.stop()
+    recognitionInstance.value = null
+  }
+  isRecording.value = false
+  clearTimeout(recordingTimeout.value)
+}
+
+// Camera functions
 const openCamera = async () => {
   try {
-    showCamera.value = true;
-    await new Promise(resolve => setTimeout(resolve, 0));
-    
-    const stream = await navigator.mediaDevices.getUserMedia({ 
-      video: { facingMode: 'environment' } 
-    });
-    videoStream.value = stream;
-    
-    const videoEl = document.getElementById('camera-preview');
-    if (videoEl) {
-      videoEl.srcObject = stream;
-      videoEl.play();
-    }
+    showCamera.value = true
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+    videoStream.value = stream
+
+    const videoEl = document.getElementById('camera-preview')
+    if (videoEl) videoEl.srcObject = stream
   } catch (error) {
-    showCamera.value = false;
-    let errorMessage = 'Unable to access camera.\n\n';
-    
-    if (error.name === 'NotAllowedError') {
-      errorMessage += 'Please allow camera access in your browser settings.';
-    } else if (error.name === 'NotFoundError') {
-      errorMessage += 'No camera found.';
-    } else {
-      errorMessage += error.message;
-    }
-    alert(errorMessage);
+    showCamera.value = false
+    let errorMessage = 'Unable to access camera.\n\n'
+    if (error.name === 'NotAllowedError') errorMessage += 'Please allow camera access in your browser settings.'
+    else if (error.name === 'NotFoundError') errorMessage += 'No camera found.'
+    else errorMessage += error.message
+    alert(errorMessage)
   }
-};
+}
 
 const capturePhoto = () => {
-  const videoEl = document.getElementById('camera-preview');
-  const canvas = document.createElement('canvas');
-  canvas.width = videoEl.videoWidth;
-  canvas.height = videoEl.videoHeight;
-  canvas.getContext('2d').drawImage(videoEl, 0, 0);
-  
+  const videoEl = document.getElementById('camera-preview')
+  const canvas = document.createElement('canvas')
+  canvas.width = videoEl.videoWidth
+  canvas.height = videoEl.videoHeight
+  canvas.getContext('2d').drawImage(videoEl, 0, 0)
   canvas.toBlob((blob) => {
-    capturedPhoto.value = blob;
-    capturedPhotoURL.value = URL.createObjectURL(blob);
-    closeCamera();
-  }, 'image/jpeg');
-};
+    capturedPhoto.value = blob
+    capturedPhotoURL.value = URL.createObjectURL(blob)
+    closeCamera()
+  }, 'image/jpeg')
+}
 
 const closeCamera = () => {
-  if (videoStream.value) {
-    videoStream.value.getTracks().forEach(track => track.stop());
-    videoStream.value = null;
-  }
-  showCamera.value = false;
-};
+  if (videoStream.value) videoStream.value.getTracks().forEach(track => track.stop())
+  videoStream.value = null
+  showCamera.value = false
+}
 
 const addNoteField = () => notes.push({ text: '' })
 const addNextStepField = () => nextSteps.push({ text: '' })
 
 const createContact = async () => {
   if (!user.value) return router.push('/')
-  
-  // Upload photo if exists (either captured or uploaded)
-  let photoURL = null;
-  const photoToUpload = capturedPhoto.value || imageFile.value;
-  
+  let photoURL = null
+  const photoToUpload = capturedPhoto.value || imageFile.value
+
   if (photoToUpload) {
     try {
-      const photoFileName = `photos/${user.value.uid}/${Date.now()}.jpg`;
-      const photoStorageRef = storageRef(storage, photoFileName);
-      await uploadBytes(photoStorageRef, photoToUpload);
-      photoURL = await getDownloadURL(photoStorageRef);
+      const photoFileName = `photos/${user.value.uid}/${Date.now()}.jpg`
+      const photoStorageRef = storageRef(storage, photoFileName)
+      await uploadBytes(photoStorageRef, photoToUpload)
+      photoURL = await getDownloadURL(photoStorageRef)
     } catch (error) {
-      console.error('Error uploading photo:', error);
-      alert('Failed to upload photo');
+      console.error('Error uploading photo:', error)
+      alert('Failed to upload photo')
     }
   }
-  
+
   const contactDocRef = await addDoc(userContactsRef.value, {
     name: name.value,
     company: company.value,
     title: title.value,
     meetingPlace: meetingPlace.value || '',
     dateMet: dateMet.value
-  ? dateMet.value.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    })
-  : '',
+      ? dateMet.value.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      : '',
     photoURL: photoURL || null,
     createdAt: serverTimestamp()
   })
 
   const contactId = contactDocRef.id
 
-  // Add notes
   const notesRef = collection(db, 'Users', user.value.uid, 'Contacts', contactId, 'Notes')
   for (const n of notes) {
-    if (n.text.trim() !== '') {
-      await addDoc(notesRef, {
-        text: n.text,
-        day: new Date().toISOString().split('T')[0],
-        createdAt: serverTimestamp()
-      })
-    }
+    if (n.text.trim() !== '') await addDoc(notesRef, { text: n.text, day: new Date().toISOString().split('T')[0], createdAt: serverTimestamp() })
   }
 
-  // Add next steps
   const stepsRef = collection(db, 'Users', user.value.uid, 'Contacts', contactId, 'NextSteps')
   for (const s of nextSteps) {
-    if (s.text.trim() !== '') {
-      await addDoc(stepsRef, {
-        text: s.text,
-        done: false,
-        createdAt: serverTimestamp()
-      })
-    }
+    if (s.text.trim() !== '') await addDoc(stepsRef, { text: s.text, done: false, createdAt: serverTimestamp() })
   }
 
+  // Reset form
   name.value = ''
   company.value = ''
   title.value = ''
@@ -175,50 +210,29 @@ const createContact = async () => {
   capturedPhoto.value = null
   capturedPhotoURL.value = null
   showCamera.value = false
-  
+
   router.push('/contacts')
 }
-
 </script>
 
 <template>
   <div class="new-person-entry">
     <h1 class="entry-title">New Person Entry</h1>
-    
     <form @submit.prevent="createContact" class="entry-form">
+      <!-- Contact Info -->
       <div class="form-row">
-        <div class="form-field">
-          <label for="name">Name</label>
-          <input id="name" v-model="name" type="text" class="form-input" required />
-        </div>
-        <div class="form-field">
-          <label for="company">Company</label>
-          <input id="company" v-model="company" type="text" class="form-input" />
-        </div>
-        <div class="form-field">
-          <label for="title">Title</label>
-          <input id="title" v-model="title" type="text" class="form-input" />
-        </div>
+        <div class="form-field"><label for="name">Name</label><input id="name" v-model="name" class="form-input" required /></div>
+        <div class="form-field"><label for="company">Company</label><input id="company" v-model="company" class="form-input" /></div>
+        <div class="form-field"><label for="title">Title</label><input id="title" v-model="title" class="form-input" /></div>
       </div>
-
       <div class="form-field full-width">
         <label for="meetingPlace">Meeting Place</label>
-        <input id="meetingPlace" v-model="meetingPlace" type="text" class="form-input" placeholder="e.g. Coffee shop" />
+        <input id="meetingPlace" v-model="meetingPlace" class="form-input" placeholder="e.g. Coffee shop" />
       </div>
-
       <div class="form-field full-width">
         <label>Date Met</label>
-        <DatePicker
-          small
-          v-model="dateMet"
-          appendTo="body"
-          dateFormat="M d, yy"
-          showIcon
-          placeholder="Select date"
-          inputClass="form-input"
-        />
+        <DatePicker v-model="dateMet" appendTo="body" dateFormat="M d, yy" showIcon inputClass="form-input" placeholder="Select date" />
       </div>
-
 
       <!-- Notes -->
       <div class="form-field full-width">
@@ -226,90 +240,124 @@ const createContact = async () => {
         <div v-for="(note, index) in notes" :key="index" class="dynamic-input">
           <input v-model="note.text" type="text" class="form-input" placeholder="Enter a note..." />
         </div>
-        <button type="button" class="add-button" @click="addNoteField">+ Add another note</button>
+        <div class="notes-buttons" style="display:flex; gap:0.5rem; margin-top:0.5rem;">
+          <Button class="p-button p-button-lg p-button-rounded p-button-primary" icon="pi pi-microphone" :label="isRecording ? 'Stop Recording' : 'Use Voice Transcription for Note'" @click="toggleVoiceRecording" />
+          <Button class="p-button p-button-lg p-button-rounded p-button-primary" icon="pi pi-plus" label="Add another note" @click="addNoteField" />
+        </div>
       </div>
 
       <!-- Next Steps -->
       <div class="form-field full-width">
         <label>Next Steps</label>
         <div v-for="(step, index) in nextSteps" :key="index" class="dynamic-input">
-          <input v-model="step.text" type="text" class="form-input" placeholder="Enter a next step..." />
+          <input v-model="step.text" class="form-input" placeholder="Enter a next step..." />
         </div>
-        <button type="button" class="add-button" @click="addNextStepField">+ Add another next step</button>
+<Button 
+  class="p-button p-button-lg p-button-rounded p-button-primary" 
+  icon="pi pi-plus" 
+  label="Add another next step" 
+  @click="addNextStepField" 
+  style="margin-top:0.5rem; width: 50%;" 
+/>
       </div>
 
-      <div class="media-options">
-        <div class="media-option">
-          <input type="file" id="imageUpload" accept="image/*" @change="handleImageUpload" style="display: none;" />
-          <label for="imageUpload" class="upload-button image-button">
-            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="upload-icon">
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-              <path d="M3 12l3-3 3 3 6-6 6 6" stroke="#666" fill="none"></path>
-              <path d="M3 18l3-3 3 3 6-6 6 6" stroke="#666" fill="none"></path>
-              <circle cx="8.5" cy="8.5" r="1.5" fill="#999"></circle>
-            </svg>
-            <span>+ Upload Image</span>
-          </label>
-        </div>
-        
-        <span class="or-divider">or</span>
-        
-        <div class="media-option">
-          <button type="button" @click="handleVoiceNote" class="upload-button voice-button">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="voice-icon">
-              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-              <line x1="12" y1="19" x2="12" y2="23"></line>
-              <line x1="8" y1="23" x2="16" y2="23"></line>
-            </svg>
-            <span>+ Voice Note</span>
-          </button>
-        </div>
+      
 
-        <span class="or-divider">or</span>
+<!-- Media -->
+<div class="media-options" style="display: flex; align-items: center; gap: 0.5rem;">
+  <div class="media-option" style="flex: 1; text-align: right;">
+    <input type="file" id="imageUpload" accept="image/*" @change="handleImageUpload" style="display:none;" ref="imageInput" />
+    <Button 
+      class="p-button p-button-lg p-button-rounded p-button-primary" 
+      icon="pi pi-image" 
+      label="Upload Image" 
+      @click.prevent="$refs.imageInput.click()" 
+    />
+  </div>
 
-        <div class="media-option">
-          <button type="button" @click="openCamera" class="upload-button camera-button">
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="camera-icon">
-              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-              <circle cx="12" cy="13" r="4"></circle>
-            </svg>
-            <span>+ Take Photo</span>
-          </button>
-        </div>
+  <span style="flex: 0; text-align: center;">or</span>
+
+  <div class="media-option" style="flex: 1; text-align: left;">
+    <Button class="p-button p-button-lg p-button-rounded p-button-primary" icon="pi pi-camera" label="Take Photo" @click="openCamera" />
+  </div>
+</div>
+
+
+<!-- Camera Modal -->
+<div v-if="showCamera" class="camera-modal">
+  <div class="camera-container">
+    <video id="camera-preview" class="camera-preview" autoplay playsinline></video>
+    <div class="camera-controls" style="display: flex; align-items: center; justify-content: center; gap: 1rem;">
+      <Button class="p-button p-button-lg p-button-rounded p-button-primary" label="📷 Capture" @click="capturePhoto" />
+      <span style="text-align: center;">or</span>
+      <Button class="p-button p-button-lg p-button-rounded p-button-secondary" label="✕ Close" @click="closeCamera" />
+    </div>
+  </div>
+</div>
+
+
+
+
+      <!-- Captured / Uploaded Photo -->
+      <div v-if="capturedPhoto || imageFile" class="photo-preview">
+        <img :src="capturedPhotoURL || imageFileURL" class="captured-image" />
+        <Button class="p-button p-button-rounded p-button-secondary" label="✕ Remove" @click="() => { capturedPhoto = null; capturedPhotoURL = null; imageFile = null; imageFileURL = null }" style="margin-top:0.5rem;" />
       </div>
 
-      <!-- Camera Preview Modal -->
-      <div v-if="showCamera" class="camera-modal">
-        <div class="camera-container">
-          <video id="camera-preview" class="camera-preview" autoplay playsinline></video>
-          <div class="camera-controls">
-            <button type="button" @click="capturePhoto" class="capture-button">📷 Capture</button>
-            <button type="button" @click="closeCamera" class="close-button">✕ Close</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Captured Photo -->
-      <div v-if="capturedPhoto" class="photo-preview">
-        <img :src="capturedPhotoURL" alt="Captured photo" class="captured-image" />
-        <button type="button" @click="capturedPhoto = null; capturedPhotoURL = null" class="remove-photo">✕ Remove Photo</button>
-      </div>
-
-      <!-- Uploaded Image -->
-      <div v-if="imageFile" class="photo-preview">
-        <img :src="imageFileURL" alt="Uploaded image" class="captured-image" />
-        <button type="button" @click="imageFile = null; imageFileURL = null" class="remove-photo">✕ Remove Image</button>
-      </div>
-
+      <!-- Submit -->
       <div class="submit-section">
-        <button type="submit" class="submit-button">Save Contact</button>
+<Button 
+  class="p-button p-button-rounded" 
+  label="Save Contact" 
+  type="submit"
+  style="background-color: #065f46 !important; color: white !important; border-radius: 12px !important;"
+/>
+
       </div>
     </form>
   </div>
 </template>
 
 <style scoped>
+.p-button {
+  font-size: 1.05rem;
+  padding: 0.85rem 1.5rem;
+}
+
+::v-deep(.p-button-rounded) {
+  border-radius: 12px !important; 
+}
+
+
+.p-button-primary {
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+}
+
+.p-button-primary:hover {
+  background-color: #357abd;
+}
+
+.p-button-secondary {
+  background-color: #dc2626;
+  color: white;
+  border: none;
+}
+
+.p-button-secondary:hover {
+  background-color: #b91c1c;
+}
+::v-deep(.p-button-primary) {
+  background-color: #4a90e2 !important;
+  color: white !important;
+  border: none !important;
+}
+
+::v-deep(.p-button-primary:hover) {
+  background-color: #357abd !important;
+}
+
 .new-person-entry {
   max-width: 900px;
   margin: 2rem auto;
@@ -357,41 +405,12 @@ const createContact = async () => {
   border: 1px solid #ddd;
   border-radius: 8px;
   font-size: 1rem;
-  background-color: white;
+  background-color: #fff;
 }
-
-:deep(.p-datepicker-title) {
-  display: flex;
-  align-items: center;
-}
-
-:deep(.p-datepicker-title .p-datepicker-month) {
-  margin-right: 0.35rem;
-}
-
 
 .form-input:focus {
   outline: none;
   border-color: #4a90e2;
-}
-
-.form-textarea {
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-family: inherit;
-  background-color: white;
-  resize: vertical;
-}
-
-.form-textarea:focus {
-  outline: none;
-  border-color: #4a90e2;
-}
-
-.form-textarea::placeholder {
-  color: #999;
 }
 
 .media-options {
@@ -404,89 +423,6 @@ const createContact = async () => {
 .media-option {
   flex: 1;
 }
-
-.upload-button {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 1.5rem;
-  border-radius: 12px;
-  background-color: white;
-  cursor: pointer;
-  width: 100%;
-  font-size: 0.9rem;
-  color: #333;
-  border: 1px solid #ddd;
-}
-
-.upload-button:hover {
-  border-color: #4a90e2;
-  background-color: #f0f7ff;
-}
-
-.image-button {
-  border-style: solid;
-}
-
-.voice-button {
-  border-radius: 50%;
-  width: 120px;
-  height: 120px;
-  background-color: #1a1a1a;
-  color: white;
-  border: none;
-  padding: 0;
-}
-
-.voice-button:hover {
-  background-color: #333;
-}
-
-.camera-button {
-  border-radius: 50%;
-  width: 120px;
-  height: 120px;
-  background-color: #059669;
-  color: white;
-  border: none;
-  padding: 0;
-  transition: all 0.3s ease;
-}
-
-.camera-button:hover {
-  background-color: #047857;
-}
-
-.upload-icon {
-  width: 40px;
-  height: 40px;
-  color: #666;
-}
-.p-datepicker {
-  max-width: 320px;
-}
-
-
-.voice-icon {
-  width: 32px;
-  height: 32px;
-  color: white;
-}
-
-.camera-icon {
-  width: 32px;
-  height: 32px;
-  color: white;
-}
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-bottom: 1rem;
-}
-
 
 .camera-modal {
   position: fixed;
@@ -519,63 +455,11 @@ const createContact = async () => {
   justify-content: center;
 }
 
-.capture-button {
-  padding: 1rem 2rem;
-  background-color: #059669;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 1.1rem;
-  cursor: pointer;
-}
-
-.capture-button:hover {
-  background-color: #047857;
-}
-
-.close-button {
-  padding: 1rem 2rem;
-  background-color: #dc2626;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 1.1rem;
-  cursor: pointer;
-}
-
-.close-button:hover {
-  background-color: #b91c1c;
-}
-
-.photo-preview {
-  margin-top: 1rem;
-  position: relative;
-}
-
 .captured-image {
   width: 100%;
   max-width: 400px;
   border-radius: 12px;
   display: block;
-}
-
-.remove-photo {
-  margin-top: 0.5rem;
-  padding: 0.5rem 1rem;
-  background-color: #dc2626;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.remove-photo:hover {
-  background-color: #b91c1c;
-}
-
-.or-divider {
-  font-size: 0.9rem;
-  color: #666;
 }
 
 .submit-section {
@@ -584,48 +468,14 @@ const createContact = async () => {
   justify-content: center;
 }
 
-.submit-button {
-  padding: 0.875rem 2rem;
-  background-color: #4a90e2;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  cursor: pointer;
-}
-
-.submit-button:hover {
-  background-color: #357abd;
-}
-
 @media (max-width: 768px) {
   .form-row {
     grid-template-columns: 1fr;
   }
-  
+
   .media-options {
     flex-direction: column;
   }
-  
-  .voice-button {
-    width: 100%;
-    height: auto;
-    border-radius: 12px;
-    padding: 1.5rem;
-  }
-
-  .camera-button {
-    width: 100%;
-    height: auto;
-    border-radius: 12px;
-    padding: 1.5rem;
-  }
-  :deep(.p-inputtext) {
-  width: 100%;
-  padding: 0.75rem;
-  border-radius: 8px;
-  font-size: 1rem;
 }
 
-}
 </style>
