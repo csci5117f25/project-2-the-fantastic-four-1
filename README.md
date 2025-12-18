@@ -102,7 +102,7 @@ Edit Contact
 **Document integrations with 3rd Party code or services here.
 Please do not document required libraries (e.g., VUE, Firebase, vuefire).**
 
-* Library or service name: description of use
+* Library or service name: Code from Progressier.com
 * Primevue: For component styling
 
 **If there's anything else you would like to disclose about how your project
